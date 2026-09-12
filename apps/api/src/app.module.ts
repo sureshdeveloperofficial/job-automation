@@ -7,6 +7,11 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { HealthModule } from './health/health.module.js';
+import { ProfileModule } from './profile/profile.module.js';
+import { EvidenceModule } from './evidence/evidence.module.js';
+import { RoleProfilesModule } from './role-profiles/role-profiles.module.js';
+import { ResumesModule } from './resumes/resumes.module.js';
+import { ResumeParserModule } from './resume-parser/resume-parser.module.js';
 
 @Module({
   imports: [
@@ -47,6 +52,11 @@ import { HealthModule } from './health/health.module.js';
     AuthModule,
     UsersModule,
     HealthModule,
+    ProfileModule,
+    EvidenceModule,
+    RoleProfilesModule,
+    ResumesModule,
+    ResumeParserModule,
   ],
 })
 export class AppModule {}

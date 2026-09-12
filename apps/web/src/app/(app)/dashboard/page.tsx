@@ -17,6 +17,8 @@ import {
   LogOut,
   ChevronRight,
   Loader2,
+  ShieldCheck,
+  Sliders,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -26,6 +28,8 @@ const navItems = [
   { icon: Search, label: 'Find Jobs', href: '/jobs' },
   { icon: Building2, label: 'Companies', href: '/companies' },
   { icon: UserCircle, label: 'Profile', href: '/profile' },
+  { icon: ShieldCheck, label: 'Evidence Ledger', href: '/profile/evidence' },
+  { icon: Sliders, label: 'Role Targets', href: '/role-profiles' },
   { icon: FileText, label: 'Resumes', href: '/resumes' },
   { icon: Send, label: 'Applications', href: '/applications' },
   { icon: Briefcase, label: 'Interviews', href: '/interviews' },

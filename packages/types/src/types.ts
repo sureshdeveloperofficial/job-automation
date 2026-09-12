@@ -31,6 +31,36 @@ export interface User {
 
 // ─── Candidate Profile ────────────────────────────────────────────────────────
 
+export interface CandidateExperienceItem {
+  id?: string;
+  title: string;
+  company: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  description?: string;
+  bullets?: string[];
+}
+
+export interface CandidateEducationItem {
+  id?: string;
+  degree: string;
+  institution: string;
+  fieldOfStudy?: string;
+  startDate?: string;
+  endDate?: string;
+  grade?: string;
+}
+
+export interface CandidateProjectItem {
+  id?: string;
+  name: string;
+  description?: string;
+  url?: string;
+  technologies?: string[];
+}
+
 export interface CandidateProfile {
   id: string;
   userId: string;
@@ -38,6 +68,9 @@ export interface CandidateProfile {
   summary?: string;
   phone?: string;
   location?: string;
+  country?: string;
+  state?: string;
+  city?: string;
   linkedinUrl?: string;
   githubUrl?: string;
   portfolioUrl?: string;
@@ -48,6 +81,14 @@ export interface CandidateProfile {
   expectedSalaryMax?: number;
   salaryCurrency?: string;
   workModes: WorkMode[];
+  profileHealthScore: number;
+  skills: string[];
+  experiences?: CandidateExperienceItem[];
+  education?: CandidateEducationItem[];
+  certifications?: string[];
+  projects?: CandidateProjectItem[];
+  onboardingStep: number;
+  isOnboardingCompleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,16 +98,60 @@ export interface CandidateProfile {
 export interface CandidateEvidence {
   id: string;
   userId: string;
+  profileId: string;
   category: string;
   claim: string;
   context?: string;
   source: EvidenceSource;
   sourceDetail?: string;
   status: EvidenceStatus;
+  confidenceScore?: number;
+  verifierNotes?: string;
   verifiedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface ProfileHealthScore {
+  score: number;
+  breakdown: {
+    personalInfo: number;
+    experience: number;
+    skills: number;
+    education: number;
+    evidence: number;
+  };
+  recommendations: string[];
+  completedItems: string[];
+  pendingItems: string[];
+}
+
+export interface ParsedResumeData {
+  personalInfo: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    linkedinUrl?: string;
+    githubUrl?: string;
+    portfolioUrl?: string;
+    summary?: string;
+  };
+  skills: string[];
+  experiences: CandidateExperienceItem[];
+  education: CandidateEducationItem[];
+  projects: CandidateProjectItem[];
+  certifications: string[];
+  suggestedEvidence: Array<{
+    category: string;
+    claim: string;
+    context?: string;
+    sourceDetail?: string;
+    confidenceScore?: number;
+  }>;
+  rawText?: string;
+}
+
 
 // ─── Role Profile ─────────────────────────────────────────────────────────────
 

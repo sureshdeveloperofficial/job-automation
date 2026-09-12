@@ -244,6 +244,13 @@ model CandidateProfile {
   salaryCurrency      String?    @db.VarChar(3)
   workModes           WorkMode[] @default([])
   profileHealthScore  Int        @default(0)
+  skills              String[]   @default([])
+  experiences         Json?
+  education           Json?
+  certifications      String[]   @default([])
+  projects            Json?
+  onboardingStep      Int        @default(1)
+  isOnboardingCompleted Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -255,16 +262,18 @@ model CandidateProfile {
 }
 
 model CandidateEvidence {
-  id           String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  userId       String         @db.Uuid
-  profileId    String         @db.Uuid
-  category     String         @db.VarChar(100)
-  claim        String         @db.Text
-  context      String?        @db.Text
-  source       EvidenceSource
-  sourceDetail String?        @db.VarChar(500)
-  status       EvidenceStatus @default(PENDING)
-  verifiedAt   DateTime?
+  id              String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId          String         @db.Uuid
+  profileId       String         @db.Uuid
+  category        String         @db.VarChar(100)
+  claim           String         @db.Text
+  context         String?        @db.Text
+  source          EvidenceSource
+  sourceDetail    String?        @db.VarChar(500)
+  status          EvidenceStatus @default(PENDING)
+  confidenceScore Float?         @default(1.0)
+  verifierNotes   String?        @db.Text
+  verifiedAt      DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
