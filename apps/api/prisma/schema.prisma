@@ -1,0 +1,555 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector"), uuid_ossp(map: "uuid-ossp"), pg_trgm]
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  CANDIDATE
+  ADMIN
+}
+
+enum WorkMode {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  FREELANCE
+  INTERNSHIP
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum EvidenceStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum EvidenceSource {
+  RESUME
+  MANUAL
+  CERTIFICATION
+  PROJECT
+  WORK_HISTORY
+}
+
+enum ApplicationState {
+  DISCOVERED
+  ANALYZING
+  MATCHED
+  QUALIFIED
+  RESUME_GENERATING
+  RESUME_READY
+  ATS_VALIDATING
+  APPLICATION_READY
+  AWAITING_USER
+  APPLICATION_STARTED
+  FORM_MAPPING
+  FORM_FILLING
+  QUESTIONS_COMPLETED
+  SUBMITTING
+  SUBMITTED
+  TRACKING
+  CAPTCHA_REQUIRED
+  LOGIN_REQUIRED
+  USER_ACTION_REQUIRED
+  JOB_CLOSED
+  DUPLICATE_APPLICATION
+  VALIDATION_ERROR
+  APPLICATION_ERROR
+  PLATFORM_ERROR
+  NETWORK_ERROR
+}
+
+enum ApplyMode {
+  MANUAL
+  ASSISTED
+  AUTO
+}
+
+enum ResumeType {
+  MASTER
+  BASE
+  ROLE
+  TAILORED
+}
+
+enum SkillGapLevel {
+  STRONG
+  PARTIAL
+  MISSING
+}
+
+enum SkillGapPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ApplicationEventType {
+  JOB_DISCOVERED
+  JD_CAPTURED
+  JD_ANALYZED
+  ROLE_MATCHED
+  MATCH_SCORE_CALCULATED
+  RESUME_GENERATION_STARTED
+  RESUME_GENERATED
+  ATS_VALIDATION_COMPLETED
+  FACT_CHECK_COMPLETED
+  APPLICATION_READY
+  APPLICATION_STARTED
+  FORM_FIELDS_MAPPED
+  SUBMISSION_STARTED
+  APPLICATION_SUBMITTED
+  APPLICATION_FAILED
+  INTERVIEW_SCHEDULED
+  APPLICATION_REJECTED
+  OFFER_RECEIVED
+}
+
+enum NotificationType {
+  NEW_HIGH_MATCH_JOB
+  APPLICATION_READY
+  USER_ACTION_REQUIRED
+  APPLICATION_SUBMITTED
+  APPLICATION_ERROR
+  INTERVIEW_SCHEDULED
+  STATUS_CHANGED
+  OFFER_RECEIVED
+}
+
+enum InterviewType {
+  PHONE_SCREEN
+  TECHNICAL
+  CODING
+  SYSTEM_DESIGN
+  BEHAVIORAL
+  ONSITE
+  FINAL
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id               String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email            String   @unique @db.VarChar(255)
+  passwordHash     String   @db.VarChar(255)
+  firstName        String   @db.VarChar(100)
+  lastName         String   @db.VarChar(100)
+  role             UserRole @default(CANDIDATE)
+  isEmailVerified  Boolean  @default(false)
+  emailVerifyToken String?  @db.VarChar(512)
+  deletedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  profile          CandidateProfile?
+  preferences      UserPreferences?
+  roleProfiles     RoleProfile[]
+  resumes          Resume[]
+  applications     Application[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+  refreshTokens    RefreshToken[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model UserPreferences {
+  id                       String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId                   String   @unique @db.Uuid
+  defaultRoleProfileId     String?  @db.Uuid
+  defaultLocation          String?  @db.VarChar(200)
+  minimumMatchScore        Int      @default(70)
+  autoApplyEnabled         Boolean  @default(false)
+  autoApplyThreshold       Int      @default(94)
+  requireApproval          Boolean  @default(true)
+  maxApplicationsPerDay    Int      @default(10)
+  allowedCompanies         String[] @default([])
+  excludedCompanies        String[] @default([])
+  notifyNewHighMatchJob    Boolean  @default(true)
+  notifyApplicationReady   Boolean  @default(true)
+  notifyUserActionRequired Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model RefreshToken {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId    String   @db.Uuid
+  token     String   @unique @db.VarChar(512)
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  userAgent String?  @db.VarChar(500)
+  ipAddress String?  @db.VarChar(45)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// ─── Candidate Profile ────────────────────────────────────────────────────────
+
+model CandidateProfile {
+  id                  String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId              String     @unique @db.Uuid
+  title               String?    @db.VarChar(200)
+  summary             String?    @db.Text
+  phone               String?    @db.VarChar(30)
+  location            String?    @db.VarChar(200)
+  country             String?    @db.VarChar(100)
+  state               String?    @db.VarChar(100)
+  city                String?    @db.VarChar(100)
+  linkedinUrl         String?    @db.VarChar(500)
+  githubUrl           String?    @db.VarChar(500)
+  portfolioUrl        String?    @db.VarChar(500)
+  yearsOfExperience   Int?
+  noticePeriodDays    Int?
+  currentSalary       Decimal?   @db.Decimal(12, 2)
+  expectedSalaryMin   Decimal?   @db.Decimal(12, 2)
+  expectedSalaryMax   Decimal?   @db.Decimal(12, 2)
+  salaryCurrency      String?    @db.VarChar(3)
+  workModes           WorkMode[] @default([])
+  profileHealthScore  Int        @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidence CandidateEvidence[]
+
+  @@map("candidate_profiles")
+}
+
+model CandidateEvidence {
+  id           String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId       String         @db.Uuid
+  profileId    String         @db.Uuid
+  category     String         @db.VarChar(100)
+  claim        String         @db.Text
+  context      String?        @db.Text
+  source       EvidenceSource
+  sourceDetail String?        @db.VarChar(500)
+  status       EvidenceStatus @default(PENDING)
+  verifiedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([profileId])
+  @@index([category])
+  @@index([status])
+  @@map("candidate_evidence")
+}
+
+// ─── Role Profiles ────────────────────────────────────────────────────────────
+
+model RoleProfile {
+  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId           String           @db.Uuid
+  name             String           @db.VarChar(100)
+  targetTitle      String           @db.VarChar(200)
+  preferredTitles  String[]         @default([])
+  seniority        String?          @db.VarChar(50)
+  requiredSkills   String[]         @default([])
+  preferredSkills  String[]         @default([])
+  industries       String[]         @default([])
+  excludedRoles    String[]         @default([])
+  locations        String[]         @default([])
+  workModes        WorkMode[]       @default([])
+  employmentTypes  EmploymentType[] @default([])
+  salaryMin        Decimal?         @db.Decimal(12, 2)
+  salaryMax        Decimal?         @db.Decimal(12, 2)
+  salaryCurrency   String?          @db.VarChar(3)
+  preferredResumeId String?         @db.Uuid
+  isActive         Boolean          @default(true)
+  deletedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("role_profiles")
+}
+
+// ─── Resumes ──────────────────────────────────────────────────────────────────
+
+model Resume {
+  id            String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId        String     @db.Uuid
+  name          String     @db.VarChar(200)
+  type          ResumeType
+  roleProfileId String?    @db.Uuid
+  isDefault     Boolean    @default(false)
+  isArchived    Boolean    @default(false)
+  deletedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions ResumeVersion[]
+
+  @@index([userId])
+  @@index([type])
+  @@map("resumes")
+}
+
+model ResumeVersion {
+  id            String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  resumeId      String  @db.Uuid
+  version       Int
+  fileKey       String  @db.VarChar(1000)
+  mimeType      String  @db.VarChar(100)
+  fileSizeBytes Int
+  atsScore      Int?
+  recruiterScore Int?
+  isActive      Boolean @default(true)
+  isFrozen      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  resume       Resume        @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@unique([resumeId, version])
+  @@index([resumeId])
+  @@map("resume_versions")
+}
+
+// ─── Companies ────────────────────────────────────────────────────────────────
+
+model Company {
+  id             String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name           String  @db.VarChar(300)
+  normalizedName String  @db.VarChar(300)
+  industry       String? @db.VarChar(200)
+  size           String? @db.VarChar(50)
+  careersUrl     String? @db.VarChar(1000)
+  websiteUrl     String? @db.VarChar(1000)
+  logoUrl        String? @db.VarChar(1000)
+  description    String? @db.Text
+  deletedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs Job[]
+
+  @@unique([normalizedName])
+  @@index([normalizedName])
+  @@map("companies")
+}
+
+// ─── Jobs ─────────────────────────────────────────────────────────────────────
+
+model Job {
+  id              String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  companyId       String          @db.Uuid
+  title           String          @db.VarChar(300)
+  normalizedTitle String          @db.VarChar(300)
+  description     String          @db.Text
+  location        String?         @db.VarChar(300)
+  workMode        WorkMode?
+  employmentType  EmploymentType?
+  salaryMin       Decimal?        @db.Decimal(12, 2)
+  salaryMax       Decimal?        @db.Decimal(12, 2)
+  salaryCurrency  String?         @db.VarChar(3)
+  postedAt        DateTime?
+  firstSeenAt     DateTime        @default(now())
+  lastSeenAt      DateTime        @default(now())
+  source          String          @db.VarChar(100)
+  sourceJobId     String?         @db.VarChar(500)
+  sourceUrl       String?         @db.VarChar(2000)
+  applicationUrl  String?         @db.VarChar(2000)
+  contentHash     String          @db.VarChar(64)
+  isActive        Boolean         @default(true)
+  deletedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id])
+  jdSnapshots  JDSnapshot[]
+  applications Application[]
+
+  @@unique([source, sourceJobId])
+  @@index([companyId])
+  @@index([contentHash])
+  @@index([isActive])
+  @@index([postedAt])
+  @@index([normalizedTitle])
+  @@map("jobs")
+}
+
+model JDSnapshot {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  jobId         String   @db.Uuid
+  rawJd         String   @db.Text
+  normalizedJd  String?  @db.Text
+  contentHash   String   @db.VarChar(64)
+  capturedAt    DateTime @default(now())
+  source        String   @db.VarChar(100)
+  sourceJobId   String?  @db.VarChar(500)
+  sourceUrl     String?  @db.VarChar(2000)
+
+  job          Job           @relation(fields: [jobId], references: [id])
+  applications Application[]
+
+  @@index([jobId])
+  @@index([contentHash])
+  @@map("jd_snapshots")
+}
+
+// ─── Applications ─────────────────────────────────────────────────────────────
+
+model Application {
+  id              String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId          String           @db.Uuid
+  jobId           String           @db.Uuid
+  roleProfileId   String           @db.Uuid
+  jdSnapshotId    String           @db.Uuid
+  resumeVersionId String?          @db.Uuid
+  state           ApplicationState @default(AWAITING_USER)
+  applyMode       ApplyMode
+  connectorId     String?          @db.VarChar(100)
+  traceId         String           @db.VarChar(100)
+  appliedAt       DateTime?
+  submittedAt     DateTime?
+  deletedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id])
+  job           Job             @relation(fields: [jobId], references: [id])
+  roleProfile   RoleProfile     @relation(fields: [roleProfileId], references: [id])
+  jdSnapshot    JDSnapshot      @relation(fields: [jdSnapshotId], references: [id])
+  resumeVersion ResumeVersion?  @relation(fields: [resumeVersionId], references: [id])
+  events        ApplicationEvent[]
+  errors        ApplicationError[]
+
+  @@unique([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
+  @@index([state])
+  @@index([traceId])
+  @@map("applications")
+}
+
+model ApplicationEvent {
+  id            String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  applicationId String               @db.Uuid
+  type          ApplicationEventType
+  stage         String?              @db.VarChar(100)
+  severity      String               @db.VarChar(10) @default("INFO")
+  connector     String?              @db.VarChar(100)
+  traceId       String               @db.VarChar(100)
+  metadata      Json?
+  timestamp     DateTime             @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([type])
+  @@map("application_events")
+}
+
+model ApplicationError {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  applicationId String   @db.Uuid
+  errorCode     String   @db.VarChar(100)
+  message       String   @db.Text
+  retryable     Boolean  @default(false)
+  attempt       Int      @default(1)
+  connector     String?  @db.VarChar(100)
+  traceId       String   @db.VarChar(100)
+  metadata      Json?
+  timestamp     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("application_errors")
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(300)
+  message   String           @db.Text
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId     String?  @db.Uuid
+  action     String   @db.VarChar(200)
+  resource   String   @db.VarChar(200)
+  resourceId String?  @db.Uuid
+  ipAddress  String?  @db.VarChar(45)
+  userAgent  String?  @db.VarChar(500)
+  traceId    String?  @db.VarChar(100)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@map("audit_logs")
+}

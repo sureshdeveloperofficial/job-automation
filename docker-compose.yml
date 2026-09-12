@@ -1,0 +1,85 @@
+version: '3.9'
+
+services:
+  # ─── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: career_os_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: career_os
+      POSTGRES_PASSWORD: career_os_password
+      POSTGRES_DB: career_os_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U career_os -d career_os_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: career_os_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── MinIO (S3-compatible) ──────────────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: career_os_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: career_os_minio
+      MINIO_ROOT_PASSWORD: career_os_minio_secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ─── MinIO bucket init ──────────────────────────────────────────────────────
+  minio-init:
+    image: minio/mc:latest
+    container_name: career_os_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 career_os_minio career_os_minio_secret;
+      mc mb --ignore-existing local/career-os-files;
+      mc anonymous set download local/career-os-files/public;
+      echo 'MinIO bucket initialized';
+      "
+    restart: on-failure
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  default:
+    name: career_os_network
