@@ -138,6 +138,8 @@
   - `plans/phase-1-tasks.md`
   - `plans/phase-2-plan.md`
   - `plans/phase-2-tasks.md`
+  - `plans/phase-3-plan.md`
+  - `plans/phase-3-tasks.md`
   - `plans/master-task-tracker.md` (this file)
   - `.agents/skills/ai-career-os/SKILL.md`
 - **Backend API Modules**:
