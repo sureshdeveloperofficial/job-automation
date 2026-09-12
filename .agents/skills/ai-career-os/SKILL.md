@@ -67,3 +67,23 @@ pnpm --filter api test  # Run backend unit tests
 - **Response Format**: Always wrap API responses in `{ success: boolean, data: T, timestamp: string, traceId: string }`.
 - **Error Format**: Always return standardized JSON error envelopes with trace IDs via `AllExceptionsFilter`.
 - **Authentication**: JWT access token (15m) + refresh token rotation (7 days) with revocation check in DB. Use `@Public()` for unauthenticated routes.
+
+---
+
+## 6. Phase Roadmap & Implementation Status
+
+- **Phase 1: Foundation (COMPLETED)**
+  - Monorepo structure (pnpm + Turbo), `@career-os/types`, `@career-os/schemas`.
+  - NestJS 12 API on port `1961` with AuthModule (JWT + refresh token rotation), UsersModule, HealthModule, Pino logger, RFC-compliant exceptions filter.
+  - Next.js 16 Web on port `1962` with Tailwind CSS v4, dark glassmorphism design, `/login`, `/signup`, `/dashboard`, typed API client with auto 401 token refresh queue.
+  - Docker Compose: PostgreSQL 16 on `5433`, Redis 7 on `6379`, MinIO on `9000/9001`.
+  - Detailed specs: `plans/phase-1-plan.md` & `plans/phase-1-tasks.md`.
+
+- **Phase 2: Profile & Evidence Engine (READY FOR EXECUTION)**
+  - Candidate Profile Engine with 0–100% Health Score calculator.
+  - Candidate Evidence Ledger (verifiable claims linked to skills, projects, and achievements).
+  - Deterministic Resume Parser (rule-based PDF/DOCX extraction with zero LLM dependencies).
+  - Target Role Profiles Manager (multiple job target presets).
+  - Frontend: 6-step Onboarding Wizard (`/onboarding`), Profile Hub (`/profile`), Evidence Ledger (`/profile/evidence`), and Role Profiles Manager (`/role-profiles`).
+  - Detailed specs: `plans/phase-2-plan.md` & `plans/phase-2-tasks.md`.
+
