@@ -97,8 +97,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    profiles:
-      - full
 
   # ─── Frontend Web (Next.js) ─────────────────────────────────────────────────
   web:
@@ -111,11 +109,10 @@ services:
       - '1962:1962'
     environment:
       PORT: '1962'
+      HOSTNAME: '0.0.0.0'
       NEXT_PUBLIC_API_URL: 'http://localhost:1961/api/v1'
     depends_on:
       - api
-    profiles:
-      - full
 
 volumes:
   postgres_data:

@@ -8,11 +8,14 @@ COPY packages/ ./packages/
 COPY apps/web/ ./apps/web/
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm -F @career-os/types run build
+RUN pnpm -F @career-os/schemas run build
 RUN pnpm -F web run build
 
 EXPOSE 1962
 
 ENV PORT=1962
+ENV HOSTNAME=0.0.0.0
 ENV NEXT_PUBLIC_API_URL=http://localhost:1961/api/v1
 
 CMD ["pnpm", "-F", "web", "run", "start"]

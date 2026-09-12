@@ -8,6 +8,8 @@ COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm -F @career-os/types run build
+RUN pnpm -F @career-os/schemas run build
 RUN pnpm -F api run prisma:generate
 RUN pnpm -F api run build
 

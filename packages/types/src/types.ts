@@ -14,7 +14,7 @@ import {
   ApplicationEventType,
   NotificationType,
   InterviewType,
-} from './enums';
+} from './enums.js';
 
 // ─── User ─────────────────────────────────────────────────────────────────────
 
