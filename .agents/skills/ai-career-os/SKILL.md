@@ -70,20 +70,25 @@ pnpm --filter api test  # Run backend unit tests
 
 ---
 
-## 6. Phase Roadmap & Implementation Status
-
-- **Phase 1: Foundation (COMPLETED)**
+- **Phase 1: Foundation (COMPLETED & VERIFIED)**
   - Monorepo structure (pnpm + Turbo), `@career-os/types`, `@career-os/schemas`.
   - NestJS 12 API on port `1961` with AuthModule (JWT + refresh token rotation), UsersModule, HealthModule, Pino logger, RFC-compliant exceptions filter.
   - Next.js 16 Web on port `1962` with Tailwind CSS v4, dark glassmorphism design, `/login`, `/signup`, `/dashboard`, typed API client with auto 401 token refresh queue.
   - Docker Compose: PostgreSQL 16 on `5433`, Redis 7 on `6379`, MinIO on `9000/9001`.
   - Detailed specs: `plans/phase-1-plan.md` & `plans/phase-1-tasks.md`.
 
-- **Phase 2: Profile & Evidence Engine (READY FOR EXECUTION)**
-  - Candidate Profile Engine with 0–100% Health Score calculator.
-  - Candidate Evidence Ledger (verifiable claims linked to skills, projects, and achievements).
-  - Deterministic Resume Parser (rule-based PDF/DOCX extraction with zero LLM dependencies).
-  - Target Role Profiles Manager (multiple job target presets).
-  - Frontend: 6-step Onboarding Wizard (`/onboarding`), Profile Hub (`/profile`), Evidence Ledger (`/profile/evidence`), and Role Profiles Manager (`/role-profiles`).
+- **Phase 2: Profile & Evidence Engine (COMPLETED & VERIFIED)**
+  - Deterministic Resume Parser (rule-based PDF/DOCX text extraction, 500+ skill dictionary matcher, contact regexes, zero LLM dependency).
+  - Candidate Profile Engine with 0–100% Health Score calculator and completeness breakdown.
+  - Candidate Evidence Ledger (claims, status tracking, source links, verification actions).
+  - Target Role Profiles Manager (multiple job target presets with primary role toggle).
+  - MinIO S3 document integration for resume storage and file downloads.
+  - Frontend: 6-step Onboarding Wizard (`/onboarding`), Profile Hub (`/profile`), Evidence Ledger (`/profile/evidence`), and Target Role Profiles (`/role-profiles`).
   - Detailed specs: `plans/phase-2-plan.md` & `plans/phase-2-tasks.md`.
+
+- **Phase 3: Job Discovery & Market Radar (NEXT UP)**
+  - Multi-source Job Ingestion Connectors (Greenhouse, Lever, Workday, LinkedIn, Indeed).
+  - Job Normalization & Deduplication Pipeline (canonical company, location, salary parsing).
+  - Vector Embeddings & Hybrid Search (`pgvector` cosine similarity + full-text search).
+  - Market Salary Intelligence & Role Trends radar.
 
