@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # ─── PostgreSQL ─────────────────────────────────────────────────────────────
   postgres:
@@ -11,7 +9,7 @@ services:
       POSTGRES_PASSWORD: career_os_password
       POSTGRES_DB: career_os_db
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -38,7 +36,7 @@ services:
 
   # ─── MinIO (S3-compatible) ──────────────────────────────────────────────────
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: career_os_minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -58,7 +56,7 @@ services:
 
   # ─── MinIO bucket init ──────────────────────────────────────────────────────
   minio-init:
-    image: minio/mc:latest
+    image: quay.io/minio/mc:latest
     container_name: career_os_minio_init
     depends_on:
       minio:
@@ -71,6 +69,53 @@ services:
       echo 'MinIO bucket initialized';
       "
     restart: on-failure
+
+  # ─── Backend API (NestJS) ───────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: career_os_api
+    restart: unless-stopped
+    ports:
+      - '1961:1961'
+    environment:
+      NODE_ENV: development
+      PORT: '1961'
+      API_PORT: '1961'
+      API_HOST: '0.0.0.0'
+      DATABASE_URL: 'postgresql://career_os:career_os_password@postgres:5432/career_os_db?schema=public'
+      REDIS_URL: 'redis://redis:6379'
+      S3_ENDPOINT: 'http://minio:9000'
+      S3_BUCKET: 'career-os-files'
+      S3_ACCESS_KEY: 'career_os_minio'
+      S3_SECRET_KEY: 'career_os_minio_secret'
+      JWT_SECRET: 'change-this-to-a-very-long-random-secret-at-least-64-chars'
+      WEB_URL: 'http://localhost:1962'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - full
+
+  # ─── Frontend Web (Next.js) ─────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: career_os_web
+    restart: unless-stopped
+    ports:
+      - '1962:1962'
+    environment:
+      PORT: '1962'
+      NEXT_PUBLIC_API_URL: 'http://localhost:1961/api/v1'
+    depends_on:
+      - api
+    profiles:
+      - full
 
 volumes:
   postgres_data:

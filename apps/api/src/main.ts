@@ -18,7 +18,7 @@ async function bootstrap() {
 
   // CORS — restrict in production
   app.enableCors({
-    origin: process.env['WEB_URL'] ?? 'http://localhost:3000',
+    origin: process.env['WEB_URL'] ?? 'http://localhost:1962',
     credentials: true,
   });
 
@@ -47,7 +47,7 @@ async function bootstrap() {
     swaggerOptions: { persistAuthorization: true },
   });
 
-  const port = parseInt(process.env['API_PORT'] ?? '3001', 10);
+  const port = parseInt(process.env['API_PORT'] ?? process.env['PORT'] ?? '1961', 10);
   const host = process.env['API_HOST'] ?? '0.0.0.0';
   await app.listen(port, host);
 

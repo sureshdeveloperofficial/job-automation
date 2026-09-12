@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: false,
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:1961/api/v1',
   },
 };
 

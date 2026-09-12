@@ -63,8 +63,8 @@ pnpm run db:generate
 pnpm dev
 
 # Or start individually:
-pnpm --filter api dev    # NestJS API on http://localhost:3001
-pnpm --filter web dev    # Next.js Web App on http://localhost:3000
+pnpm --filter api dev    # NestJS API on http://localhost:1961
+pnpm --filter web dev    # Next.js Web App on http://localhost:1962
 ```
 
 ---
@@ -72,8 +72,8 @@ pnpm --filter web dev    # Next.js Web App on http://localhost:3000
 ## API Documentation
 
 When the API server is running, the Swagger OpenAPI documentation is interactively accessible at:
-- **Interactive Swagger UI**: [http://localhost:3001/api/docs](http://localhost:3001/api/docs)
-- **API Base Route**: [http://localhost:3001/api/v1](http://localhost:3001/api/v1)
+- **Interactive Swagger UI**: [http://localhost:1961/api/docs](http://localhost:1961/api/docs)
+- **API Base Route**: [http://localhost:1961/api/v1](http://localhost:1961/api/v1)
 
 ---
 
