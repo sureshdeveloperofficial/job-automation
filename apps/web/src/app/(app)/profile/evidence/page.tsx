@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { evidenceApi } from '@/lib/api';
@@ -16,6 +16,9 @@ import {
   Loader2,
   ChevronRight,
   AlertCircle,
+  Paperclip,
+  ExternalLink,
+  UploadCloud,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -110,6 +113,33 @@ export default function EvidenceLedgerPage() {
       await loadEvidence();
     } catch (err: any) {
       setErrorMessage(err?.response?.data?.message || 'Failed to create evidence claim');
+    }
+  };
+
+  // Cloudinary Attachment Upload State
+  const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
+  const [selectedEvidenceForUpload, setSelectedEvidenceForUpload] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleTriggerAttachment = (id: string) => {
+    setSelectedEvidenceForUpload(id);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedEvidenceForUpload) return;
+    try {
+      setUploadingItemId(selectedEvidenceForUpload);
+      setErrorMessage(null);
+      await evidenceApi.uploadAttachment(selectedEvidenceForUpload, file);
+      await loadEvidence();
+    } catch (err: any) {
+      setErrorMessage(err?.response?.data?.message || 'Failed to upload proof document to Cloudinary');
+    } finally {
+      setUploadingItemId(null);
+      setSelectedEvidenceForUpload(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -354,7 +384,7 @@ export default function EvidenceLedgerPage() {
                         {item.category}
                       </Badge>
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        Source: {item.source} {item.sourceDetail ? `(${item.sourceDetail})` : ''}
+                        Source: {item.source}
                       </span>
                     </div>
 
@@ -365,9 +395,48 @@ export default function EvidenceLedgerPage() {
                         Context: <span className="text-foreground/80">{item.context}</span>
                       </p>
                     )}
+
+                    {/* Cloudinary Proof Document */}
+                    {item.sourceDetail && (item.sourceDetail.includes('http://') || item.sourceDetail.includes('https://')) ? (
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <Paperclip className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <a
+                          href={item.sourceDetail.replace(/^Cloudinary Proof:\s*/i, '').trim()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-400 hover:text-blue-300 underline flex items-center gap-1 font-medium truncate max-w-md"
+                        >
+                          View Cloudinary Proof Document <ExternalLink className="w-3 h-3 shrink-0" />
+                        </a>
+                      </div>
+                    ) : item.sourceDetail ? (
+                      <p className="text-xs text-muted-foreground italic">
+                        Detail: {item.sourceDetail}
+                      </p>
+                    ) : null}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 border-blue-500/30 text-xs"
+                      onClick={() => handleTriggerAttachment(item.id)}
+                      disabled={uploadingItemId === item.id}
+                      title="Upload proof attachment to Cloudinary"
+                    >
+                      {uploadingItemId === item.id ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="w-3.5 h-3.5 mr-1" />
+                          {item.sourceDetail?.includes('http') ? 'Update Proof' : 'Attach Proof'}
+                        </>
+                      )}
+                    </Button>
+
                     {item.status !== 'VERIFIED' && (
                       <Button
                         size="sm"
@@ -402,6 +471,15 @@ export default function EvidenceLedgerPage() {
             ))}
           </div>
         )}
+
+        {/* Hidden Cloudinary file input for proof document attachment */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept="application/pdf,image/*,.docx,.txt"
+        />
       </div>
     </div>
   );

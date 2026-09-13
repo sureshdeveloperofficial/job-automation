@@ -1,3 +1,4 @@
+/// <reference types="multer" />
 import {
   Controller,
   Get,
@@ -7,8 +8,12 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ResumesService } from './resumes.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -27,6 +32,36 @@ class ParseResumeTextDto {
 @Controller('resumes')
 export class ResumesController {
   constructor(private readonly resumesService: ResumesService) {}
+
+  @Post('upload')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Upload a resume file (PDF, DOCX, TXT) to Cloudinary, parse text, and sync profile' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadResume(
+    @CurrentUser('id') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Query('name') resumeName?: string,
+    @Query('autoSeedEvidence') autoSeedEvidence?: string,
+  ) {
+    return this.resumesService.uploadAndParseResume(
+      userId,
+      file,
+      resumeName,
+      autoSeedEvidence !== 'false',
+    );
+  }
 
   @Post('parse-text')
   @HttpCode(HttpStatus.OK)

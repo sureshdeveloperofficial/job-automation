@@ -213,6 +213,17 @@ export const evidenceApi = {
     const response = await apiClient.delete<ApiResponse<any>>(`/evidence/${id}`);
     return response.data;
   },
+
+  uploadAttachment: async (id: string, file: File): Promise<ApiResponse<any>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<ApiResponse<any>>(`/evidence/${id}/attachment`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 // ─── Role Profiles API ────────────────────────────────────────────────────────
@@ -262,6 +273,25 @@ export const resumesApi = {
     return response.data;
   },
 
+  uploadResumeFile: async (
+    file: File,
+    name?: string,
+    autoSeedEvidence = true,
+  ): Promise<ApiResponse<any>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const params = new URLSearchParams();
+    if (name) params.append('name', name);
+    params.append('autoSeedEvidence', String(autoSeedEvidence));
+
+    const response = await apiClient.post<ApiResponse<any>>(`/resumes/upload?${params.toString()}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   listResumes: async (): Promise<ApiResponse<any[]>> => {
     const response = await apiClient.get<ApiResponse<any[]>>('/resumes');
     return response.data;
@@ -272,4 +302,24 @@ export const resumesApi = {
     return response.data;
   },
 };
+
+// ─── Storage API (Cloudinary) ─────────────────────────────────────────────────
+
+export const storageApi = {
+  uploadFile: async (
+    file: File,
+    folder?: string,
+  ): Promise<ApiResponse<{ url: string; publicId: string; format: string; bytes: number }>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const params = folder ? `?folder=${encodeURIComponent(folder)}` : '';
+    const response = await apiClient.post<ApiResponse<any>>(`/storage/upload${params}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+};
+
 

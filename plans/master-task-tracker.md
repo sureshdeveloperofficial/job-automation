@@ -116,6 +116,16 @@
 - [x] **P2-32: Target Role Profiles Screen** — `/role-profiles` multi-preset manager with modal creator and primary badge toggles.
 - [x] **P2-33: API Client Connection** — All frontend forms wired to backend endpoints with toast notifications.
 
+### 6. Cloudinary Cloud Storage & Document Ingestion
+- [x] **P2-34: Cloudinary Storage Service** — `CloudinaryService` with stream buffer upload supporting raw documents (`PDF`, `DOCX`, `TXT`) and images (`PNG`, `JPG`).
+- [x] **P2-35: Storage Controller** — `POST /api/v1/storage/upload` for generic multipart file uploads.
+- [x] **P2-36: Cloudinary Resume Upload Endpoint** — `POST /api/v1/resumes/upload` stores file in Cloudinary (`job-automation/resumes`), deterministically parses AST, syncs candidate profile, and seeds evidence items.
+- [x] **P2-37: Evidence Attachment Endpoint** — `POST /api/v1/evidence/:id/attachment` uploads proof documents/screenshots to Cloudinary (`job-automation/evidence`) and links to `sourceDetail`.
+- [x] **P2-38: Frontend File Dropzone** — `FileDropzone` drag-and-drop component with format filtering, 10MB limit, and loading states.
+- [x] **P2-39: Onboarding Cloudinary Ingestion** — Step 5 dual-mode selector (Cloudinary file dropzone + fallback plain text) with instant evidence population.
+- [x] **P2-40: Evidence Ledger Proof Attachments** — Direct Cloudinary document upload and verified proof links in `/profile/evidence`.
+- [x] **P2-41: Cloudinary Service Unit Tests** — 3 unit tests in `apps/api/test/cloudinary.service.spec.ts` (all passing).
+
 ---
 
 ## Verification & Quality Assurance Summary
@@ -123,8 +133,8 @@
 | Check | Tool / Target | Command | Result |
 | :--- | :--- | :--- | :--- |
 | **Monorepo Typecheck** | Turborepo (4 packages) | `pnpm run typecheck` | **PASS (0 errors)** |
-| **Code Linting** | Oxlint (40 files) | `oxlint src/ test/` | **PASS (0 errors, 0 warnings)** |
-| **Backend Test Suite** | Vitest (6 suites, 19 tests) | `pnpm --filter api test` | **PASS (19/19 passing)** |
+| **Code Linting** | Oxlint (42 files) | `oxlint src/ test/` | **PASS (0 errors, 0 warnings)** |
+| **Backend Test Suite** | Vitest (7 suites, 22 tests) | `pnpm --filter api test` | **PASS (22/22 passing)** |
 | **Web Frontend** | Next.js 16 (Port 1962) | `curl -I http://localhost:1962` | **HTTP 200 OK** |
 | **API Documentation** | NestJS Swagger (Port 1961) | `curl -I http://localhost:1961/api/docs/` | **HTTP 200 OK** |
 | **Container Status** | Docker Compose (5 services) | `docker ps` | **All 5 containers UP & healthy** |
@@ -150,11 +160,14 @@
   - `apps/api/src/resumes/*`
   - `apps/api/src/resume-parser/*`
   - `apps/api/src/role-profiles/*`
-- **Frontend App Routes**:
+  - `apps/api/src/storage/*` (Cloudinary SDK service and storage controller)
+- **Frontend App Routes & Components**:
   - `apps/web/src/app/(auth)/login/page.tsx`
   - `apps/web/src/app/(auth)/signup/page.tsx`
   - `apps/web/src/app/(app)/dashboard/page.tsx`
-  - `apps/web/src/app/(app)/onboarding/page.tsx`
+  - `apps/web/src/app/(app)/onboarding/page.tsx` (Step 5 Cloudinary dropzone)
   - `apps/web/src/app/(app)/profile/page.tsx`
-  - `apps/web/src/app/(app)/profile/evidence/page.tsx`
+  - `apps/web/src/app/(app)/profile/evidence/page.tsx` (Cloudinary proof document attachments)
   - `apps/web/src/app/(app)/role-profiles/page.tsx`
+  - `apps/web/src/components/ui/file-dropzone.tsx`
+

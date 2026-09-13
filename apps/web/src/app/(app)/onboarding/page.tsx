@@ -23,12 +23,14 @@ import {
   Link2,
   DollarSign,
   Loader2,
+  Cloud,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { FileDropzone } from '@/components/ui/file-dropzone';
 
 const POPULAR_SKILLS = [
   'TypeScript', 'React', 'Next.js', 'Node.js', 'NestJS', 'Python',
@@ -87,6 +89,12 @@ export default function OnboardingPage() {
   const [parsedEvidence, setParsedEvidence] = useState<any[]>([]);
   const [isParsingResume, setIsParsingResume] = useState(false);
   const [newSkillInput, setNewSkillInput] = useState('');
+
+  // Cloudinary File Upload State
+  const [selectedResumeFile, setSelectedResumeFile] = useState<File | null>(null);
+  const [uploadMode, setUploadMode] = useState<'file' | 'text'>('file');
+  const [isUploadingCloudinary, setIsUploadingCloudinary] = useState(false);
+  const [uploadedResumeUrl, setUploadedResumeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -161,6 +169,40 @@ export default function OnboardingPage() {
       ...prev,
       experiences: prev.experiences.filter((_, i) => i !== index),
     }));
+  };
+
+  const handleUploadResumeFile = async () => {
+    if (!selectedResumeFile) return;
+    setIsParsingResume(true);
+    setIsUploadingCloudinary(true);
+    setErrorMessage(null);
+    try {
+      const res = await resumesApi.uploadResumeFile(selectedResumeFile, selectedResumeFile.name);
+      if (res?.data) {
+        const { parsed, cloudinary } = res.data;
+        setUploadedResumeUrl(cloudinary?.url || null);
+        if (parsed) {
+          setParsedEvidence(parsed.suggestedEvidence || []);
+          setFormData((prev) => ({
+            ...prev,
+            title: parsed.personalInfo?.name ? prev.title || 'Senior Software Engineer' : prev.title,
+            phone: parsed.personalInfo?.phone || prev.phone,
+            linkedinUrl: parsed.personalInfo?.linkedinUrl || prev.linkedinUrl,
+            githubUrl: parsed.personalInfo?.githubUrl || prev.githubUrl,
+            location: parsed.personalInfo?.location || prev.location,
+            skills: Array.from(new Set([...prev.skills, ...(parsed.skills || [])])),
+            experiences: parsed.experiences?.length > 0 ? parsed.experiences : prev.experiences,
+            education: parsed.education?.length > 0 ? parsed.education : prev.education,
+          }));
+        }
+        setSuccessMessage(`Resume uploaded to Cloudinary successfully! Extracted ${parsed?.skills?.length || 0} skills and seeded ${res.data.seededEvidenceCount || 0} evidence items.`);
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.response?.data?.message || 'Failed to upload and parse resume via Cloudinary');
+    } finally {
+      setIsParsingResume(false);
+      setIsUploadingCloudinary(false);
+    }
   };
 
   const handleParseResume = async () => {
@@ -617,43 +659,127 @@ export default function OnboardingPage() {
             {step === 5 && (
               <div className="space-y-6">
                 <div className="p-4 rounded-lg border border-blue-500/20 bg-blue-500/5 space-y-2">
-                  <div className="flex items-center gap-2 text-blue-400 font-medium text-sm">
-                    <Sparkles className="w-4 h-4" />
-                    Zero-LLM Deterministic Resume Ingestion
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-blue-400 font-medium text-sm">
+                      <Sparkles className="w-4 h-4" />
+                      Cloudinary Document Ingestion & Deterministic Parsing
+                    </div>
+                    <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-300">
+                      Cloudinary Ready
+                    </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Paste your resume text below. Our engine segments sections, identifies 500+ tech competencies, and creates verified evidence candidates without external API costs.
+                    Upload your PDF, DOCX, or TXT resume to store directly in Cloudinary. Our engine automatically parses technical competencies, syncs your candidate profile, and seeds verified evidence items.
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="resume">Paste Resume Plain Text</Label>
-                  <textarea
-                    id="resume"
-                    rows={8}
-                    className="w-full rounded-md border border-border bg-background p-3 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="Paste resume content here..."
-                    value={formData.resumeText}
-                    onChange={(e) => setFormData({ ...formData, resumeText: e.target.value })}
-                  />
+                {/* Mode Selector Tabs */}
+                <div className="flex items-center p-1 bg-muted/40 rounded-lg border border-border/50 max-w-sm">
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('file')}
+                    className={`flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all ${
+                      uploadMode === 'file'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Upload Document (Cloudinary)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('text')}
+                    className={`flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all ${
+                      uploadMode === 'text'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Paste Text (Fallback)
+                  </button>
                 </div>
 
-                <Button
-                  type="button"
-                  onClick={handleParseResume}
-                  disabled={isParsingResume || !formData.resumeText.trim()}
-                  className="w-full"
-                >
-                  {isParsingResume ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Parsing Resume...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 mr-2" /> Parse Resume & Populate Evidence
-                    </>
-                  )}
-                </Button>
+                {uploadMode === 'file' ? (
+                  <div className="space-y-4">
+                    <FileDropzone
+                      onFileSelect={(file) => setSelectedResumeFile(file)}
+                      accept=".pdf,.docx,.txt"
+                      maxSizeMb={10}
+                      selectedFile={selectedResumeFile}
+                      onClear={() => setSelectedResumeFile(null)}
+                      isLoading={isUploadingCloudinary || isParsingResume}
+                      helperText="Supported formats: PDF, DOCX, TXT up to 10MB"
+                    />
+
+                    {uploadedResumeUrl && (
+                      <div className="flex items-center justify-between p-3 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-400">
+                        <div className="flex items-center gap-2 truncate">
+                          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                          <span className="truncate">Uploaded to Cloudinary:</span>
+                          <a
+                            href={uploadedResumeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline font-mono truncate hover:text-emerald-300"
+                          >
+                            {uploadedResumeUrl}
+                          </a>
+                        </div>
+                        <Badge variant="outline" className="border-emerald-500/40 text-emerald-300 shrink-0 ml-2">
+                          Cloudinary Synced
+                        </Badge>
+                      </div>
+                    )}
+
+                    <Button
+                      type="button"
+                      onClick={handleUploadResumeFile}
+                      disabled={!selectedResumeFile || isParsingResume || isUploadingCloudinary}
+                      className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium"
+                    >
+                      {isUploadingCloudinary ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading to Cloudinary & Parsing...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" /> Upload Document & Seed Evidence
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="resume">Paste Resume Plain Text</Label>
+                      <textarea
+                        id="resume"
+                        rows={8}
+                        className="w-full rounded-md border border-border bg-background p-3 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Paste resume content here..."
+                        value={formData.resumeText}
+                        onChange={(e) => setFormData({ ...formData, resumeText: e.target.value })}
+                      />
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={handleParseResume}
+                      disabled={isParsingResume || !formData.resumeText.trim()}
+                      className="w-full"
+                    >
+                      {isParsingResume ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Parsing Resume...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" /> Parse Resume & Populate Evidence
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 

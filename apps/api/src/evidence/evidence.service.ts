@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+/// <reference types="multer" />
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { CloudinaryService } from '../storage/cloudinary.service.js';
 import type {
   CreateEvidenceDto,
   UpdateEvidenceDto,
@@ -10,7 +12,41 @@ import type {
 
 @Injectable()
 export class EvidenceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
+
+  async uploadAttachment(userId: string, id: string, file: Express.Multer.File) {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('No file provided');
+    }
+
+    const item = await this.prisma.candidateEvidence.findUnique({
+      where: { id },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Evidence item not found');
+    }
+
+    if (item.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const isImage = file.mimetype.startsWith('image/');
+    const uploadResult = await this.cloudinary.uploadBuffer(file.buffer, {
+      folder: 'job-automation/evidence',
+      resourceType: isImage ? 'image' : 'raw',
+    });
+
+    return this.prisma.candidateEvidence.update({
+      where: { id },
+      data: {
+        sourceDetail: uploadResult.secureUrl,
+      },
+    });
+  }
 
   async getEvidence(userId: string, filters?: EvidenceFilterDto) {
     const where: any = { userId };

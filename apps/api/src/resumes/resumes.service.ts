@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+/// <reference types="multer" />
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ResumeParserService } from '../resume-parser/resume-parser.service.js';
+import { CloudinaryService } from '../storage/cloudinary.service.js';
 import type { CreateResumeDto } from '@career-os/schemas';
 
 @Injectable()
@@ -8,7 +10,69 @@ export class ResumesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly parser: ResumeParserService,
+    private readonly cloudinary: CloudinaryService,
   ) {}
+
+  /**
+   * Uploads resume document to Cloudinary, extracts text, synchronizes profile and seeds evidence
+   */
+  async uploadAndParseResume(
+    userId: string,
+    file: Express.Multer.File,
+    resumeName?: string,
+    autoSeedEvidence = true,
+  ) {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('No resume file provided');
+    }
+
+    // 1. Extract text from uploaded document
+    const rawText = await this.parser.extractTextFromBuffer(file.buffer, file.mimetype, file.originalname);
+
+    // 2. Upload document to Cloudinary storage
+    const uploadResult = await this.cloudinary.uploadDocument(
+      file.buffer,
+      file.originalname,
+      'job-automation/resumes',
+    );
+
+    // 3. Deterministically parse and sync candidate profile
+    const syncResult = await this.importAndSyncProfile(userId, rawText, autoSeedEvidence);
+
+    // 4. Create Resume and ResumeVersion record with Cloudinary fileKey
+    const resume = await this.prisma.resume.create({
+      data: {
+        userId,
+        name: resumeName || file.originalname.replace(/\.[^/.]+$/, ''),
+        type: 'MASTER',
+        versions: {
+          create: {
+            version: 1,
+            fileKey: uploadResult.secureUrl,
+            mimeType: file.mimetype,
+            fileSizeBytes: file.size || uploadResult.bytes,
+            isActive: true,
+          },
+        },
+      },
+      include: {
+        versions: true,
+      },
+    });
+
+    return {
+      resume,
+      cloudinary: {
+        publicId: uploadResult.publicId,
+        url: uploadResult.secureUrl,
+        bytes: uploadResult.bytes,
+      },
+      parsed: syncResult.parsed,
+      seededEvidenceCount: syncResult.seededEvidenceCount,
+      message: `Resume uploaded to Cloudinary successfully. Extracted ${syncResult.parsed.skills.length} skills and seeded ${syncResult.seededEvidenceCount} evidence candidates.`,
+    };
+  }
+
 
   parseText(rawText: string) {
     return this.parser.parseText(rawText);

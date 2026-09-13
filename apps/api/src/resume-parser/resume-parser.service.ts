@@ -43,6 +43,53 @@ export class ResumeParserService {
   private readonly logger = new Logger(ResumeParserService.name);
 
   /**
+   * Extracts plain text from an uploaded file buffer (PDF, DOCX, TXT)
+   */
+  public async extractTextFromBuffer(buffer: Buffer, mimeType: string, filename: string): Promise<string> {
+    const lowerName = filename.toLowerCase();
+
+    if (mimeType.includes('text') || lowerName.endsWith('.txt') || lowerName.endsWith('.md')) {
+      return buffer.toString('utf-8');
+    }
+
+    if (mimeType.includes('pdf') || lowerName.endsWith('.pdf')) {
+      const content = buffer.toString('latin1');
+      const textMatches: string[] = [];
+      const regex = /\((.*?)\)\s*Tj/g;
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(content)) !== null) {
+        if (match[1]) textMatches.push(match[1]);
+      }
+
+      if (textMatches.length > 20) {
+        return textMatches.join(' ');
+      }
+
+      // Extract printable characters and words
+      const asciiWords = buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
+      return asciiWords
+        .split(/\s+/)
+        .filter((w) => w.length > 1 && !w.startsWith('/') && !w.includes('obj') && !w.includes('endobj'))
+        .join(' ');
+    }
+
+    if (lowerName.endsWith('.docx') || mimeType.includes('wordprocessingml')) {
+      const content = buffer.toString('utf-8');
+      const docxMatches: string[] = [];
+      const tagRegex = /<w:t[^>]*>(.*?)<\/w:t>/g;
+      let tagMatch: RegExpExecArray | null;
+      while ((tagMatch = tagRegex.exec(content)) !== null) {
+        if (tagMatch[1]) docxMatches.push(tagMatch[1]);
+      }
+      if (docxMatches.length > 0) {
+        return docxMatches.join(' ');
+      }
+    }
+
+    return buffer.toString('utf-8');
+  }
+
+  /**
    * Deterministically parses resume plain text into structured candidate data
    * and generates candidate evidence items without an LLM.
    */

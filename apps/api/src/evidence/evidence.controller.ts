@@ -1,3 +1,4 @@
+/// <reference types="multer" />
 import {
   Controller,
   Get,
@@ -10,8 +11,11 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { EvidenceService } from './evidence.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -96,5 +100,29 @@ export class EvidenceController {
   @ApiResponse({ status: 200, description: 'Evidence record deleted' })
   async deleteEvidence(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.evidenceService.deleteEvidence(userId, id);
+  }
+
+  @Post(':id/attachment')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Upload an attachment or proof document to Cloudinary for an evidence claim' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAttachment(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.evidenceService.uploadAttachment(userId, id, file);
   }
 }

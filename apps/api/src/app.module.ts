@@ -12,9 +12,11 @@ import { EvidenceModule } from './evidence/evidence.module.js';
 import { RoleProfilesModule } from './role-profiles/role-profiles.module.js';
 import { ResumesModule } from './resumes/resumes.module.js';
 import { ResumeParserModule } from './resume-parser/resume-parser.module.js';
+import { StorageModule } from './storage/storage.module.js';
 
 @Module({
   imports: [
+    StorageModule,
     LoggerModule.forRoot({
       pinoHttp: {
         transport: process.env.NODE_ENV !== 'production'
