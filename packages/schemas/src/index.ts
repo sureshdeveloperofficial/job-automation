@@ -136,24 +136,88 @@ export const CreateRoleProfileSchema = z.object({
 
 export const UpdateRoleProfileSchema = CreateRoleProfileSchema.partial();
 
-// ─── Job Search ───────────────────────────────────────────────────────────────
+// ─── Job Search & Discovery ───────────────────────────────────────────────────
 
-export const JobSearchSchema = z.object({
+export const SeniorityLevelEnum = z.enum([
+  'INTERN',
+  'ENTRY',
+  'JUNIOR',
+  'MID',
+  'SENIOR',
+  'LEAD',
+  'STAFF',
+  'PRINCIPAL',
+  'EXECUTIVE',
+]);
+
+export const JobSearchFilterSchema = z.object({
   query: z.string().max(300).optional(),
   titles: z.array(z.string().max(200)).max(10).optional(),
   location: z.string().max(200).optional(),
-  radiusKm: z.number().min(0).max(500).optional(),
+  city: z.string().max(100).optional(),
+  radiusKm: z.coerce.number().min(0).max(500).optional(),
   workModes: z.array(z.enum(['ONSITE', 'HYBRID', 'REMOTE'])).optional(),
   employmentTypes: z
     .array(z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'FREELANCE', 'INTERNSHIP']))
     .optional(),
+  seniorities: z.array(SeniorityLevelEnum).optional(),
   freshness: z
     .enum(['LAST_24H', 'LAST_3_DAYS', 'LAST_7_DAYS', 'LAST_30_DAYS'])
     .default('LAST_7_DAYS'),
+  salaryMin: z.coerce.number().min(0).optional(),
+  salaryMax: z.coerce.number().min(0).optional(),
+  companyId: z.string().uuid().optional(),
+  companyName: z.string().max(300).optional(),
+  skills: z.array(z.string().max(100)).optional(),
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(1).max(100).default(20),
+  sortBy: z.enum(['postedAt', 'salary', 'relevance']).default('postedAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+});
+
+export const JobSearchSchema = JobSearchFilterSchema;
+
+export const CompanyFilterSchema = z.object({
+  query: z.string().max(300).optional(),
+  industry: z.string().max(200).optional(),
+  location: z.string().max(200).optional(),
+  isHiringNow: z
+    .preprocess((val) => (val === 'true' ? true : val === 'false' ? false : val), z.boolean())
+    .optional(),
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(1).max(100).default(20),
+});
+
+export const IngestJobSchema = z.object({
+  companyName: z.string().min(1).max(300),
+  title: z.string().min(1).max(300),
+  description: z.string().min(1),
+  rawDescription: z.string().optional(),
+  location: z.string().max(300).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(100).optional(),
+  country: z.string().max(100).default('India'),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  workMode: z.enum(['ONSITE', 'HYBRID', 'REMOTE']).default('HYBRID'),
+  employmentType: z
+    .enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'FREELANCE', 'INTERNSHIP'])
+    .default('FULL_TIME'),
+  seniority: SeniorityLevelEnum.default('MID'),
   salaryMin: z.number().min(0).optional(),
   salaryMax: z.number().min(0).optional(),
-  page: z.number().min(1).default(1),
-  pageSize: z.number().min(1).max(100).default(20),
+  salaryCurrency: z.string().length(3).default('INR'),
+  salaryPeriod: z.enum(['YEARLY', 'MONTHLY', 'HOURLY']).default('YEARLY'),
+  requiredSkills: z.array(z.string()).default([]),
+  preferredSkills: z.array(z.string()).default([]),
+  responsibilities: z.array(z.string()).default([]),
+  experienceMinYears: z.number().min(0).default(0),
+  experienceMaxYears: z.number().min(0).optional(),
+  source: z.string().default('MANUAL'),
+  sourceJobId: z.string().optional(),
+  sourceUrl: z.string().url().optional().or(z.literal('')),
+  applicationUrl: z.string().url().optional().or(z.literal('')),
+  postedAt: z.string().datetime().optional(),
 });
 
 // ─── Resume ───────────────────────────────────────────────────────────────────
@@ -266,6 +330,9 @@ export type CreateRoleProfileDto = z.infer<typeof CreateRoleProfileSchema>;
 export type UpdateRoleProfileDto = z.infer<typeof UpdateRoleProfileSchema>;
 
 export type JobSearchDto = z.infer<typeof JobSearchSchema>;
+export type JobSearchFilterDto = z.infer<typeof JobSearchFilterSchema>;
+export type CompanyFilterDto = z.infer<typeof CompanyFilterSchema>;
+export type IngestJobDto = z.infer<typeof IngestJobSchema>;
 export type CreateResumeDto = z.infer<typeof CreateResumeSchema>;
 export type CreateApplicationDto = z.infer<typeof CreateApplicationSchema>;
 export type CreateEvidenceDto = z.infer<typeof CreateEvidenceSchema>;

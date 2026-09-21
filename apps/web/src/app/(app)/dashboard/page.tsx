@@ -1,60 +1,70 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { jobsApi, companiesApi } from '@/lib/api';
+import { AppSidebar } from '@/components/app-sidebar';
 import {
-  LayoutDashboard,
-  Search,
   Briefcase,
+  Search,
   Building2,
-  FileText,
-  Send,
-  UserCircle,
-  BarChart3,
-  Settings,
-  Bell,
-  LogOut,
   ChevronRight,
   Loader2,
-  ShieldCheck,
-  Sliders,
+  ArrowUpRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', active: true },
-  { icon: Search, label: 'Find Jobs', href: '/jobs' },
-  { icon: Building2, label: 'Companies', href: '/companies' },
-  { icon: UserCircle, label: 'Profile', href: '/profile' },
-  { icon: ShieldCheck, label: 'Evidence Ledger', href: '/profile/evidence' },
-  { icon: Sliders, label: 'Role Targets', href: '/role-profiles' },
-  { icon: FileText, label: 'Resumes', href: '/resumes' },
-  { icon: Send, label: 'Applications', href: '/applications' },
-  { icon: Briefcase, label: 'Interviews', href: '/interviews' },
-  { icon: BarChart3, label: 'Analytics', href: '/analytics' },
-  { icon: Settings, label: 'Settings', href: '/settings' },
-];
-
-const statsCards = [
-  { label: 'Jobs Found', value: '—', trend: null, color: 'blue' },
-  { label: 'Best Matches', value: '—', trend: null, color: 'indigo' },
-  { label: 'Applications', value: '—', trend: null, color: 'purple' },
-  { label: 'Interviews', value: '—', trend: null, color: 'cyan' },
-];
-
 export default function DashboardPage() {
-  const { user, isLoading, isAuthenticated, signOut } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
+  const [recentJobs, setRecentJobs] = useState<any[]>([]);
+  const [topCompanies, setTopCompanies] = useState<any[]>([]);
+  const [totalJobs, setTotalJobs] = useState<number | string>('—');
+  const [totalCompanies, setTotalCompanies] = useState<number | string>('—');
+  const [loadingData, setLoadingData] = useState(true);
+
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, router]);
 
-  if (isLoading) {
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoadingData(true);
+        const [jobsRes, compsRes] = await Promise.allSettled([
+          jobsApi.searchJobs({ pageSize: 4, sortBy: 'postedAt', sortOrder: 'desc' }),
+          companiesApi.getCompanies({ pageSize: 4 }),
+        ]);
+
+        if (jobsRes.status === 'fulfilled' && jobsRes.value?.data) {
+          setRecentJobs(jobsRes.value.data.jobs || []);
+          setTotalJobs(jobsRes.value.data.total ?? 0);
+        }
+        if (compsRes.status === 'fulfilled' && compsRes.value?.data) {
+          setTopCompanies(compsRes.value.data.companies || []);
+          setTotalCompanies(compsRes.value.data.total ?? 0);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchDashboardData();
+    }
+  }, [isAuthenticated]);
+
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
@@ -64,131 +74,198 @@ export default function DashboardPage() {
 
   if (!isAuthenticated) return null;
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/login');
-  };
+  const statsCards = [
+    {
+      label: 'Jobs on Radar',
+      value: String(totalJobs),
+      desc: 'Active verified openings',
+      color: 'blue',
+      href: '/jobs',
+    },
+    {
+      label: 'Companies Hiring',
+      value: String(totalCompanies),
+      desc: 'High-velocity employers',
+      color: 'purple',
+      href: '/companies',
+    },
+    {
+      label: 'Target Roles',
+      value: '2 Presets',
+      desc: 'Configured role profiles',
+      color: 'indigo',
+      href: '/role-profiles',
+    },
+    {
+      label: 'Evidence Claims',
+      value: 'Verified',
+      desc: '100% deterministic proofs',
+      color: 'cyan',
+      href: '/profile/evidence',
+    },
+  ];
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 border-r border-border flex flex-col glass">
-        {/* Logo */}
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-border">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
-            <Briefcase className="w-4 h-4 text-blue-400" />
-          </div>
-          <span className="text-base font-semibold gradient-text">AI Career OS</span>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              id={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group',
-                item.active
-                  ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
-              )}
-            >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              {item.label}
-              {item.active && (
-                <ChevronRight className="w-3 h-3 ml-auto text-blue-400" />
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        {/* User area */}
-        <div className="border-t border-border p-3">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg mb-1">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleSignOut}
-            id="nav-signout"
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-150"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign out
-          </button>
-        </div>
-      </aside>
+      <AppSidebar />
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
         {/* Top bar */}
-        <header className="h-16 border-b border-border flex items-center justify-between px-6 flex-shrink-0">
+        <header className="h-16 border-b border-border flex items-center justify-between px-6 flex-shrink-0 bg-card/20 backdrop-blur-md">
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
+            <h1 className="text-base font-semibold text-foreground">Mission Control</h1>
             <p className="text-xs text-muted-foreground">
-              Welcome back, {user?.firstName} 👋
+              Welcome back, {user?.firstName} 👋 Here is your career market radar
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              id="notifications-btn"
-              className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all relative"
-              aria-label="Notifications"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-500" />
-            </button>
+            <Link href="/jobs">
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-500 gap-1.5 text-xs font-semibold h-9">
+                <Search className="w-3.5 h-3.5" />
+                Find Jobs
+              </Button>
+            </Link>
           </div>
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 animate-fade-in">
-          {/* Stats */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {statsCards.map((stat) => (
-              <div
-                key={stat.label}
-                className="glass rounded-xl p-5 hover:border-blue-500/20 transition-all duration-200"
-              >
-                <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-                <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-xs text-muted-foreground mt-1">Complete your profile to start</p>
-              </div>
+              <Link key={stat.label} href={stat.href}>
+                <div className="glass rounded-2xl p-5 hover:border-blue-500/40 transition-all duration-200 group cursor-pointer border border-border/80">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
+                    <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </div>
+                  <p className="text-2xl font-black text-foreground mt-2">{stat.value}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{stat.desc}</p>
+                </div>
+              </Link>
             ))}
           </div>
 
-          {/* Empty State — Onboarding CTA */}
-          <div className="glass rounded-2xl p-10 text-center max-w-2xl mx-auto mt-8">
-            <div className="w-16 h-16 rounded-2xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center mx-auto mb-5">
-              <Briefcase className="w-8 h-8 text-blue-400" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground mb-2">
-              Set up your career profile
-            </h2>
-            <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto leading-relaxed">
-              Complete your profile so AI Career OS can find the best matching jobs, tailor
-              your resume, and prepare your applications.
-            </p>
-            <Link
-              href="/onboarding"
-              id="start-onboarding-btn"
-              className={cn(
-                'inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold',
-                'bg-blue-500 hover:bg-blue-400 text-white transition-all duration-200',
+          {/* 2-Column Split: Market Radar Highlights + Hiring Companies */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Jobs Column (2 Cols) */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-blue-400" />
+                    Recent Opportunities on Radar
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Latest postings ingested and normalized from ecosystem feeds
+                  </p>
+                </div>
+                <Link href="/jobs">
+                  <Button variant="ghost" size="sm" className="text-xs text-blue-400 hover:text-blue-300 gap-1">
+                    View All <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </Link>
+              </div>
+
+              {recentJobs.length === 0 && !loadingData ? (
+                <div className="glass rounded-2xl p-8 text-center border border-dashed border-border space-y-3">
+                  <p className="text-xs text-muted-foreground">No recent jobs synced yet.</p>
+                  <Link href="/jobs">
+                    <Button size="sm" variant="outline" className="text-xs">
+                      Explore Job Radar
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentJobs.map((job) => (
+                    <Link key={job.id} href={`/jobs/${job.id}`}>
+                      <Card className="glass border-border/80 hover:border-blue-500/40 transition-all duration-150 group">
+                        <CardContent className="p-4 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sm font-bold text-blue-300 flex-shrink-0">
+                              {job.company?.name?.slice(0, 2).toUpperCase() || 'CO'}
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-semibold text-foreground group-hover:text-blue-400 transition-colors line-clamp-1">
+                                {job.title}
+                              </h3>
+                              <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                                <span>{job.company?.name}</span>
+                                <span>•</span>
+                                <span>{job.location || 'Remote'}</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'text-[10px] uppercase font-semibold',
+                                job.workMode === 'REMOTE' && 'border-cyan-500/30 text-cyan-400',
+                                job.workMode === 'HYBRID' && 'border-purple-500/30 text-purple-400',
+                                job.workMode === 'ONSITE' && 'border-amber-500/30 text-amber-400',
+                              )}
+                            >
+                              {job.workMode || 'HYBRID'}
+                            </Badge>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
               )}
-            >
-              Complete Profile
-              <ChevronRight className="w-4 h-4" />
-            </Link>
+            </div>
+
+            {/* Hiring Companies Column (1 Col) */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-purple-400" />
+                    Top Hiring Employers
+                  </h2>
+                  <p className="text-xs text-muted-foreground">High-activity technology teams</p>
+                </div>
+                <Link href="/companies">
+                  <Button variant="ghost" size="sm" className="text-xs text-purple-400 hover:text-purple-300 gap-1">
+                    All <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="space-y-3">
+                {topCompanies.map((company) => (
+                  <Link key={company.id} href={`/jobs?companyName=${encodeURIComponent(company.name)}`}>
+                    <Card className="glass border-border/80 hover:border-purple-500/40 transition-all duration-150 group">
+                      <CardContent className="p-3.5 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-xs font-bold text-purple-300 flex-shrink-0">
+                            {company.name?.slice(0, 2).toUpperCase() || 'CO'}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-semibold text-foreground truncate group-hover:text-purple-400 transition-colors">
+                              {company.name}
+                            </h4>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {company.headquarters || 'Tech Employer'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <Badge variant="secondary" className="text-[10px] bg-purple-500/10 text-purple-300 font-medium flex-shrink-0">
+                          {company.activeJobsCount || 1} Open
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </main>

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ParsedResumeData, CandidateExperienceItem, CandidateEducationItem, CandidateProjectItem } from '@career-os/types';
 
 // Curated tech vocabulary covering modern software engineering, data, devops, and cloud
-const TECH_SKILLS_DICTIONARY = [
+export const TECH_SKILLS_DICTIONARY = [
   // Languages
   'typescript', 'javascript', 'python', 'java', 'go', 'golang', 'rust', 'c++', 'c#', 'c',
   'ruby', 'php', 'swift', 'kotlin', 'scala', 'elixir', 'dart', 'shell', 'bash', 'powershell',

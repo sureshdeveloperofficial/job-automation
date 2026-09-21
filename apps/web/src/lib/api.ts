@@ -322,4 +322,64 @@ export const storageApi = {
   },
 };
 
+// ─── Jobs API ─────────────────────────────────────────────────────────────────
+
+export const jobsApi = {
+  searchJobs: async (params?: Record<string, any>): Promise<ApiResponse<{
+    jobs: any[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }>> => {
+    const response = await apiClient.get<ApiResponse<any>>('/jobs', { params });
+    return response.data;
+  },
+
+  getJobById: async (id: string): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>(`/jobs/${id}`);
+    return response.data;
+  },
+
+  getJobSnapshot: async (id: string): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>(`/jobs/${id}/snapshot`);
+    return response.data;
+  },
+
+  syncConnectors: async (source?: string, limit?: number): Promise<ApiResponse<any>> => {
+    const response = await apiClient.post<ApiResponse<any>>('/jobs/sync', null, {
+      params: { source, limit },
+    });
+    return response.data;
+  },
+};
+
+// ─── Companies API ────────────────────────────────────────────────────────────
+
+export const companiesApi = {
+  getCompanies: async (params?: Record<string, any>): Promise<ApiResponse<{
+    companies: any[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }>> => {
+    const response = await apiClient.get<ApiResponse<any>>('/companies', { params });
+    return response.data;
+  },
+
+  getCompanyById: async (id: string): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>(`/companies/${id}`);
+    return response.data;
+  },
+
+  getCompanyJobs: async (id: string, page = 1, pageSize = 20): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>(`/companies/${id}/jobs`, {
+      params: { page, pageSize },
+    });
+    return response.data;
+  },
+};
+
+
 

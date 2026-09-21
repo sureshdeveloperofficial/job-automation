@@ -1,8 +1,8 @@
 # AI Career OS — Master Task Tracker & Verification Record
 
-> **Overall Project Status**: **Phase 1 (100% Completed)** | **Phase 2 (100% Completed)**  
+> **Overall Project Status**: **Phase 1 (100% Completed)** | **Phase 2 (100% Completed)** | **Phase 3 (100% Completed)**  
 > **Active Environment**: Ports `1961` (API) & `1962` (Web), Postgres `5433`, Redis `6379`, MinIO `9000/9001`  
-> **Last Verification Date**: 2026-09-12  
+> **Last Verification Date**: 2026-09-21  
 
 ---
 
@@ -12,7 +12,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | **Phase 1** | **Foundation & Architecture** | Monorepo, Shared Contracts, NestJS API Auth, Next.js Web, Docker Stack | **100% COMPLETED** | Typecheck PASS, Oxlint PASS, 8/8 Unit Tests PASS, All Containers Healthy |
 | **Phase 2** | **Profile & Evidence Engine** | Deterministic Resume Parser, Profile Health Engine, Evidence Ledger, Role Profiles, Onboarding Wizard, Profile Hub | **100% COMPLETED** | Typecheck PASS, Oxlint PASS, 19/19 Unit Tests PASS, All Endpoints HTTP 200 |
-| **Phase 3** | **Job Discovery & Market Radar** | Connectors, Normalization, Deduplication, Vector Search (pgvector) | **PLANNED** | Ready for execution |
+| **Phase 3** | **Job Discovery & Market Radar** | Connectors SDK, Normalization, Deduplication, Deterministic JD Analyzer, Jobs & Companies APIs, Web Radar UI | **100% COMPLETED** | Typecheck PASS, Lint PASS, 41/41 Unit Tests PASS, 0 Errors Across Workspaces |
 
 ---
 
@@ -128,16 +128,53 @@
 
 ---
 
+## Phase 3: Task Verification Matrix
+
+### 1. Data Contracts & Prisma Schema Extension
+- [x] **P3-01: Types Extension** — Added `SeniorityLevel`, `JobFreshness`, `ConnectorCapability`, extended `Company`, `Job`, `JDSnapshot`, and added `JobDetails`, `SalaryInfo`, `JobSearchFilter`, `CompanyFilter` in `@career-os/types`.
+- [x] **P3-02: Schemas Extension** — Added `JobSearchFilterSchema`, `IngestJobSchema`, `CompanyFilterSchema` in `@career-os/schemas` and exported inferred DTOs.
+- [x] **P3-03: Relational Models Update** — Extended `Company`, `Job`, `JDSnapshot` with city, state, country, lat/long, seniority, salaryPeriod, requiredSkills, preferredSkills, responsibilities, experienceMinYears/MaxYears, cleanedText, and rawHtml in `prisma/schema.prisma`.
+- [x] **P3-04: Prisma Client Offline Generation** — Executed `pnpm -F api exec prisma generate` generating client with updated models and enums.
+
+### 2. Connector SDK & Feed Ingestion
+- [x] **P3-05: Connector Abstract Interface** — `apps/api/src/connectors/connector.interface.ts` defining `JobConnector` and `RawJobPayload`.
+- [x] **P3-06: Greenhouse Connector** — Ingestion from public Greenhouse boards (`boards-api.greenhouse.io`).
+- [x] **P3-07: Lever Connector** — Ingestion from public Lever postings (`api.lever.co`).
+- [x] **P3-08: Seed Tech Jobs Connector** — Realistic high-quality tech postings across Zoho, Razorpay, Zerodha, Postman, BrowserStack, Swiggy in Coimbatore, Bangalore, Chennai, Hyderabad, and Remote.
+- [x] **P3-09: Connectors NestJS Module** — Registered in `ConnectorsModule` with DI token `JOB_CONNECTORS` and automated sync support.
+
+### 3. Normalization & Deterministic JD Analyzer
+- [x] **P3-10: Job Normalizer Service** — Canonical role mapping (e.g. "SDE-II" -> "Backend Engineer"), regex salary parser (INR LPA, $, hourly), and experience level extraction.
+- [x] **P3-11: Job Deduplication Service** — SHA-256 content hashing across title, company, location, and description; eliminates duplicate listings and updates `lastSeenAt`.
+- [x] **P3-12: Deterministic JD Analyzer** — Zero mandatory LLM cost; 500+ skills dictionary extraction (required vs preferred), seniority detection, and action-verb responsibility extraction.
+- [x] **P3-13: Immutable JD Snapshot Service** — Captures immutable raw JD and cleaned text snapshots verified by SHA-256 checksums.
+- [x] **P3-14: Normalization & Analyzer Unit Tests** — 16 unit tests passing across `test/job-normalizer.service.spec.ts` (8/8), `test/jd-analyzer.service.spec.ts` (4/4), and `test/job-deduplication.service.spec.ts` (4/4).
+
+### 4. Backend API Modules (`apps/api`)
+- [x] **P3-15: Jobs Search API** — `GET /api/v1/jobs` with multi-facet filters (query, location, workMode, freshness, minSalary, pagination).
+- [x] **P3-16: Job Details & Candidate Match Readiness** — `GET /api/v1/jobs/:id` returning parsed specifications and real-time candidate match scoring.
+- [x] **P3-17: Immutable Snapshot Retrieval** — `GET /api/v1/jobs/:id/snapshot` returning raw immutable JD text and SHA-256 hash.
+- [x] **P3-18: Jobs Ingestion & Feed Sync** — `POST /api/v1/jobs/ingest` (manual intake) and `POST /api/v1/jobs/sync` (connector feeds sync).
+- [x] **P3-19: Companies Directory API** — `GET /api/v1/companies`, `GET /api/v1/companies/:id`, and `GET /api/v1/companies/:id/jobs`.
+- [x] **P3-20: Jobs Service Unit Tests** — 3 unit tests in `apps/api/test/jobs.service.spec.ts` (3/3 passing). Total backend test suite now at 41/41 passing tests.
+
+### 5. Frontend Web Screens (`apps/web`)
+- [x] **P3-21: Reusable Sidebar Navigation** — `AppSidebar` component with active route highlighting, badge counts, and user profile footer.
+- [x] **P3-22: Market Radar Job Discovery** — `/jobs` screen with freshness pills, work mode filters, salary formatting, live search, quick-preview drawer, and "Sync Tech Feeds" trigger.
+- [x] **P3-23: Hiring Companies Directory** — `/companies` screen with hiring velocity indicators, active openings count, industry filters, and direct links to open roles.
+- [x] **P3-24: Job Details & Immutable JD Inspector** — `/jobs/[id]` screen with candidate match readiness score, verified skills vs gap breakdown, structured checklist, and immutable raw snapshot viewer with SHA-256 copy button.
+- [x] **P3-25: Dashboard Market Radar Highlights** — `/dashboard` mission control with live jobs/companies count and recent opportunities feed.
+
+---
+
 ## Verification & Quality Assurance Summary
 
 | Check | Tool / Target | Command | Result |
 | :--- | :--- | :--- | :--- |
-| **Monorepo Typecheck** | Turborepo (4 packages) | `pnpm run typecheck` | **PASS (0 errors)** |
-| **Code Linting** | Oxlint (42 files) | `oxlint src/ test/` | **PASS (0 errors, 0 warnings)** |
-| **Backend Test Suite** | Vitest (7 suites, 22 tests) | `pnpm --filter api test` | **PASS (22/22 passing)** |
-| **Web Frontend** | Next.js 16 (Port 1962) | `curl -I http://localhost:1962` | **HTTP 200 OK** |
-| **API Documentation** | NestJS Swagger (Port 1961) | `curl -I http://localhost:1961/api/docs/` | **HTTP 200 OK** |
-| **Container Status** | Docker Compose (5 services) | `docker ps` | **All 5 containers UP & healthy** |
+| **Monorepo Typecheck** | Turborepo (4 packages) | `pnpm run typecheck` | **PASS (0 errors across 4/4 packages)** |
+| **Code Linting** | Oxlint & ESLint | `pnpm run lint` | **PASS (0 errors, 0 warnings in API; clean React purity)** |
+| **Backend Test Suite** | Vitest (11 suites, 41 tests) | `pnpm --filter api test` | **PASS (41/41 passing)** |
+| **Prisma Generation** | Prisma Client (v6.1.0) | `pnpm -F api exec prisma generate` | **PASS (Schema synchronized)** |
 
 ---
 
@@ -160,14 +197,22 @@
   - `apps/api/src/resumes/*`
   - `apps/api/src/resume-parser/*`
   - `apps/api/src/role-profiles/*`
-  - `apps/api/src/storage/*` (Cloudinary SDK service and storage controller)
+  - `apps/api/src/storage/*`
+  - `apps/api/src/connectors/*` (Greenhouse, Lever, Seed connectors, interface)
+  - `apps/api/src/jobs/*` (Job pipeline, normalizer, deduplication, search service, controller)
+  - `apps/api/src/jd-analysis/*` (JD analyzer, snapshot service)
+  - `apps/api/src/companies/*` (Companies service, controller)
 - **Frontend App Routes & Components**:
   - `apps/web/src/app/(auth)/login/page.tsx`
   - `apps/web/src/app/(auth)/signup/page.tsx`
-  - `apps/web/src/app/(app)/dashboard/page.tsx`
-  - `apps/web/src/app/(app)/onboarding/page.tsx` (Step 5 Cloudinary dropzone)
+  - `apps/web/src/app/(app)/dashboard/page.tsx` (Market radar highlights & stats)
+  - `apps/web/src/app/(app)/onboarding/page.tsx`
   - `apps/web/src/app/(app)/profile/page.tsx`
-  - `apps/web/src/app/(app)/profile/evidence/page.tsx` (Cloudinary proof document attachments)
+  - `apps/web/src/app/(app)/profile/evidence/page.tsx`
   - `apps/web/src/app/(app)/role-profiles/page.tsx`
+  - `apps/web/src/app/(app)/jobs/page.tsx` (Market Radar discovery & quick-preview)
+  - `apps/web/src/app/(app)/jobs/[id]/page.tsx` (Role details, match readiness, JD inspector)
+  - `apps/web/src/app/(app)/companies/page.tsx` (Companies hiring directory)
+  - `apps/web/src/components/app-sidebar.tsx`
   - `apps/web/src/components/ui/file-dropzone.tsx`
 

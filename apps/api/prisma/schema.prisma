@@ -33,6 +33,18 @@ enum EmploymentType {
   INTERNSHIP
 }
 
+enum SeniorityLevel {
+  INTERN
+  ENTRY
+  JUNIOR
+  MID
+  SENIOR
+  LEAD
+  STAFF
+  PRINCIPAL
+  EXECUTIVE
+}
+
 enum SkillLevel {
   BEGINNER
   INTERMEDIATE
@@ -369,16 +381,22 @@ model ResumeVersion {
 // ─── Companies ────────────────────────────────────────────────────────────────
 
 model Company {
-  id             String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name           String  @db.VarChar(300)
-  normalizedName String  @db.VarChar(300)
-  industry       String? @db.VarChar(200)
-  size           String? @db.VarChar(50)
-  careersUrl     String? @db.VarChar(1000)
-  websiteUrl     String? @db.VarChar(1000)
-  logoUrl        String? @db.VarChar(1000)
-  description    String? @db.Text
-  deletedAt      DateTime?
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name            String    @db.VarChar(300)
+  normalizedName  String    @db.VarChar(300)
+  slug            String?   @db.VarChar(300)
+  domain          String?   @db.VarChar(200)
+  industry        String?   @db.VarChar(200)
+  size            String?   @db.VarChar(50)
+  headquarters    String?   @db.VarChar(300)
+  employeeCount   String?   @db.VarChar(50)
+  isHiringNow     Boolean   @default(true)
+  activeJobsCount Int       @default(0)
+  careersUrl      String?   @db.VarChar(1000)
+  websiteUrl      String?   @db.VarChar(1000)
+  logoUrl         String?   @db.VarChar(1000)
+  description     String?   @db.Text
+  deletedAt       DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -387,33 +405,48 @@ model Company {
 
   @@unique([normalizedName])
   @@index([normalizedName])
+  @@index([isHiringNow])
   @@map("companies")
 }
 
 // ─── Jobs ─────────────────────────────────────────────────────────────────────
 
 model Job {
-  id              String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  companyId       String          @db.Uuid
-  title           String          @db.VarChar(300)
-  normalizedTitle String          @db.VarChar(300)
-  description     String          @db.Text
-  location        String?         @db.VarChar(300)
-  workMode        WorkMode?
-  employmentType  EmploymentType?
-  salaryMin       Decimal?        @db.Decimal(12, 2)
-  salaryMax       Decimal?        @db.Decimal(12, 2)
-  salaryCurrency  String?         @db.VarChar(3)
-  postedAt        DateTime?
-  firstSeenAt     DateTime        @default(now())
-  lastSeenAt      DateTime        @default(now())
-  source          String          @db.VarChar(100)
-  sourceJobId     String?         @db.VarChar(500)
-  sourceUrl       String?         @db.VarChar(2000)
-  applicationUrl  String?         @db.VarChar(2000)
-  contentHash     String          @db.VarChar(64)
-  isActive        Boolean         @default(true)
-  deletedAt       DateTime?
+  id                 String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  companyId          String          @db.Uuid
+  title              String          @db.VarChar(300)
+  normalizedTitle    String          @db.VarChar(300)
+  description        String          @db.Text
+  rawDescription     String?         @db.Text
+  location           String?         @db.VarChar(300)
+  city               String?         @db.VarChar(100)
+  state              String?         @db.VarChar(100)
+  country            String?         @default("India") @db.VarChar(100)
+  latitude           Float?
+  longitude          Float?
+  workMode           WorkMode?       @default(HYBRID)
+  employmentType     EmploymentType? @default(FULL_TIME)
+  seniority          SeniorityLevel? @default(MID)
+  salaryMin          Decimal?        @db.Decimal(12, 2)
+  salaryMax          Decimal?        @db.Decimal(12, 2)
+  salaryCurrency     String?         @default("INR") @db.VarChar(3)
+  salaryPeriod       String?         @default("YEARLY") @db.VarChar(20)
+  requiredSkills     String[]        @default([])
+  preferredSkills    String[]        @default([])
+  responsibilities   String[]        @default([])
+  experienceMinYears Int?            @default(0)
+  experienceMaxYears Int?
+  status             String          @default("ACTIVE") @db.VarChar(50)
+  postedAt           DateTime?       @default(now())
+  firstSeenAt        DateTime        @default(now())
+  lastSeenAt         DateTime        @default(now())
+  source             String          @default("MANUAL") @db.VarChar(100)
+  sourceJobId        String?         @db.VarChar(500)
+  sourceUrl          String?         @db.VarChar(2000)
+  applicationUrl     String?         @db.VarChar(2000)
+  contentHash        String          @db.VarChar(64)
+  isActive           Boolean         @default(true)
+  deletedAt          DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -428,6 +461,7 @@ model Job {
   @@index([isActive])
   @@index([postedAt])
   @@index([normalizedTitle])
+  @@index([city, workMode])
   @@map("jobs")
 }
 
@@ -435,6 +469,8 @@ model JDSnapshot {
   id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   jobId         String   @db.Uuid
   rawJd         String   @db.Text
+  rawHtml       String?  @db.Text
+  cleanedText   String?  @db.Text
   normalizedJd  String?  @db.Text
   contentHash   String   @db.VarChar(64)
   capturedAt    DateTime @default(now())

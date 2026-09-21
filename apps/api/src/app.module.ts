@@ -13,10 +13,16 @@ import { RoleProfilesModule } from './role-profiles/role-profiles.module.js';
 import { ResumesModule } from './resumes/resumes.module.js';
 import { ResumeParserModule } from './resume-parser/resume-parser.module.js';
 import { StorageModule } from './storage/storage.module.js';
+import { ConnectorsModule } from './connectors/connectors.module.js';
+import { JobsModule } from './jobs/jobs.module.js';
+import { CompaniesModule } from './companies/companies.module.js';
 
 @Module({
   imports: [
     StorageModule,
+    ConnectorsModule,
+    JobsModule,
+    CompaniesModule,
     LoggerModule.forRoot({
       pinoHttp: {
         transport: process.env.NODE_ENV !== 'production'

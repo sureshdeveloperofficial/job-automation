@@ -2,6 +2,7 @@ import {
   UserRole,
   WorkMode,
   EmploymentType,
+  SeniorityLevel,
   SkillGapLevel,
   SkillGapPriority,
   ApplicationState,
@@ -11,6 +12,7 @@ import {
   EvidenceSource,
   AIProvider,
   ConnectorCapability,
+  JobFreshness,
   ApplicationEventType,
   NotificationType,
   InterviewType,
@@ -184,8 +186,14 @@ export interface Company {
   id: string;
   name: string;
   normalizedName: string;
+  slug?: string;
+  domain?: string;
   industry?: string;
   size?: string;
+  headquarters?: string;
+  employeeCount?: string;
+  isHiringNow?: boolean;
+  activeJobsCount?: number;
   careersUrl?: string;
   websiteUrl?: string;
   logoUrl?: string;
@@ -194,7 +202,23 @@ export interface Company {
   updatedAt: Date;
 }
 
+export interface CompanyFilter {
+  query?: string;
+  industry?: string;
+  location?: string;
+  isHiringNow?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
 // ─── Job ──────────────────────────────────────────────────────────────────────
+
+export interface SalaryInfo {
+  min?: number;
+  max?: number;
+  currency?: string;
+  period?: 'YEARLY' | 'MONTHLY' | 'HOURLY';
+}
 
 export interface Job {
   id: string;
@@ -202,12 +226,25 @@ export interface Job {
   title: string;
   normalizedTitle: string;
   description: string;
+  rawDescription?: string;
   location?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
   workMode?: WorkMode;
   employmentType?: EmploymentType;
+  seniority?: SeniorityLevel;
   salaryMin?: number;
   salaryMax?: number;
   salaryCurrency?: string;
+  salaryPeriod?: string;
+  requiredSkills?: string[];
+  preferredSkills?: string[];
+  responsibilities?: string[];
+  experienceMinYears?: number;
+  experienceMaxYears?: number;
   postedAt?: Date;
   firstSeenAt: Date;
   lastSeenAt: Date;
@@ -216,9 +253,42 @@ export interface Job {
   sourceUrl?: string;
   applicationUrl?: string;
   contentHash: string;
+  status?: string;
   isActive: boolean;
+  company?: Company;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface JobDetails extends Job {
+  company: Company;
+  snapshot?: JDSnapshot;
+  matchReadiness?: {
+    matchedSkills: string[];
+    missingSkills: string[];
+    matchScore: number;
+  };
+}
+
+export interface JobSearchFilter {
+  query?: string;
+  titles?: string[];
+  location?: string;
+  city?: string;
+  radiusKm?: number;
+  workModes?: WorkMode[];
+  employmentTypes?: EmploymentType[];
+  seniorities?: SeniorityLevel[];
+  freshness?: JobFreshness;
+  salaryMin?: number;
+  salaryMax?: number;
+  companyId?: string;
+  companyName?: string;
+  skills?: string[];
+  page?: number;
+  pageSize?: number;
+  sortBy?: 'postedAt' | 'salary' | 'relevance';
+  sortOrder?: 'asc' | 'desc';
 }
 
 // ─── JD Snapshot ─────────────────────────────────────────────────────────────
@@ -227,6 +297,8 @@ export interface JDSnapshot {
   id: string;
   jobId: string;
   rawJd: string;
+  rawHtml?: string;
+  cleanedText?: string;
   normalizedJd?: string;
   contentHash: string;
   capturedAt: Date;

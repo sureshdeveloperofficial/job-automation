@@ -25,9 +25,9 @@ describe('CloudinaryService', () => {
       original_filename: 'my_resume',
     };
 
-    vi.spyOn(cloudinary.uploader, 'upload_stream').mockImplementation((options: any, callback: any) => {
-      // Simulate successful stream upload
-      setTimeout(() => callback(undefined, mockResult), 10);
+    vi.spyOn(cloudinary.uploader, 'upload_stream').mockImplementation(((options: any, callback?: any) => {
+      const cb = typeof options === 'function' ? options : callback;
+      setTimeout(() => cb?.(undefined, mockResult), 10);
       return {
         write: vi.fn(),
         end: vi.fn(),
@@ -35,7 +35,7 @@ describe('CloudinaryService', () => {
         once: vi.fn(),
         emit: vi.fn(),
       } as any;
-    });
+    }) as any);
 
     const sampleBuffer = Buffer.from('Sample resume content');
     const result = await service.uploadDocument(sampleBuffer, 'my_resume.pdf');

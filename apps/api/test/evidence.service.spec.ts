@@ -24,7 +24,10 @@ describe('EvidenceService', () => {
         delete: vi.fn(),
       },
     };
-    service = new EvidenceService(prismaMock);
+    const cloudinaryMock: any = {
+      uploadBuffer: vi.fn(),
+    };
+    service = new EvidenceService(prismaMock, cloudinaryMock);
   });
 
   it('should list evidence items and status counts', async () => {
