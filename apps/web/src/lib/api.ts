@@ -297,8 +297,49 @@ export const resumesApi = {
     return response.data;
   },
 
+  getResume: async (id: string): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>(`/resumes/${id}`);
+    return response.data;
+  },
+
   createResume: async (data: any): Promise<ApiResponse<any>> => {
     const response = await apiClient.post<ApiResponse<any>>('/resumes', data);
+    return response.data;
+  },
+
+  scoreResume: async (id: string, data: any): Promise<ApiResponse<any>> => {
+    const response = await apiClient.post<ApiResponse<any>>(`/resumes/${id}/score`, data);
+    return response.data;
+  },
+
+  tailorResume: async (id: string, data: any): Promise<ApiResponse<any>> => {
+    const response = await apiClient.post<ApiResponse<any>>(`/resumes/${id}/tailor`, data);
+    return response.data;
+  },
+
+  listVariants: async (): Promise<ApiResponse<any[]>> => {
+    const response = await apiClient.get<ApiResponse<any[]>>('/resumes/variants');
+    return response.data;
+  },
+
+  getVariant: async (id: string): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>(`/resumes/variants/${id}`);
+    return response.data;
+  },
+
+  getVariantDiff: async (id: string): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>(`/resumes/variants/${id}/diff`);
+    return response.data;
+  },
+
+  exportVariant: async (
+    id: string,
+    format: 'html' | 'text' | 'json' = 'html',
+    template = 'MODERN',
+  ): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>(`/resumes/variants/${id}/export`, {
+      params: { format, template },
+    });
     return response.data;
   },
 };

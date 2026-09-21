@@ -348,5 +348,34 @@ export type OnboardingStep4Dto = z.infer<typeof OnboardingStep4Schema>;
 export type OnboardingStep5Dto = z.infer<typeof OnboardingStep5Schema>;
 export type OnboardingStep6Dto = z.infer<typeof OnboardingStep6Schema>;
 
-export type PaginationDto = z.infer<typeof PaginationSchema>;
+// ─── Phase 4: Resume Tailoring & ATS Scoring ──────────────────────────────────
 
+export const ScoreResumeSchema = z.object({
+  jobId: z.string().uuid().optional(),
+  customJobDescription: z.string().min(10).max(50000).optional(),
+  targetRoleTitle: z.string().max(200).optional(),
+  targetCompanyName: z.string().max(200).optional(),
+});
+
+export const TailorResumeSchema = z.object({
+  jobId: z.string().uuid().optional(),
+  customJobDescription: z.string().min(10).max(50000).optional(),
+  targetRoleTitle: z.string().max(200).optional(),
+  targetCompanyName: z.string().max(200).optional(),
+  selectedEvidenceIds: z.array(z.string().uuid()).optional(),
+  templateStyle: z.enum(['MODERN', 'CLASSIC', 'MINIMAL']).default('MODERN'),
+});
+
+export const CreateVariantSchema = z.object({
+  resumeId: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  targetJobId: z.string().uuid().optional(),
+  targetCompany: z.string().max(200).optional(),
+  structuredData: z.record(z.any()),
+  diffSummary: z.record(z.any()).optional(),
+  evidenceBindings: z.array(z.string().uuid()).default([]),
+});
+
+export type ScoreResumeDto = z.infer<typeof ScoreResumeSchema>;
+export type TailorResumeDto = z.infer<typeof TailorResumeSchema>;
+export type CreateVariantDto = z.infer<typeof CreateVariantSchema>;

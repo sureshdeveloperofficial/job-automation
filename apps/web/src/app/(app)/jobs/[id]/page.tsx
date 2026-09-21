@@ -147,6 +147,13 @@ export default function JobDetailsPage() {
               </Badge>
             </button>
 
+            <Link href={`/resumes/tailor?jobId=${job.id}`}>
+              <Button size="sm" variant="outline" className="gap-1.5 border-indigo-500/40 text-indigo-400 hover:bg-indigo-500/10 h-9 font-semibold">
+                <Sparkles className="w-3.5 h-3.5" />
+                Tailor Resume
+              </Button>
+            </Link>
+
             {job.applicationUrl && (
               <a href={job.applicationUrl} target="_blank" rel="noreferrer">
                 <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-500 h-9 font-semibold">
@@ -285,6 +292,18 @@ export default function JobDetailsPage() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                <div className="pt-3 border-t border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">
+                    Generate an evidence-backed tailored resume variant optimized for this specific role.
+                  </span>
+                  <Link href={`/resumes/tailor?jobId=${job.id}`}>
+                    <Button size="sm" className="gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold h-8 w-full sm:w-auto shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Launch Tailoring Studio
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

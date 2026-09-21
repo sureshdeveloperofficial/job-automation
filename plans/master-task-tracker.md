@@ -1,6 +1,6 @@
 # AI Career OS — Master Task Tracker & Verification Record
 
-> **Overall Project Status**: **Phase 1 (100% Completed)** | **Phase 2 (100% Completed)** | **Phase 3 (100% Completed)**  
+> **Overall Project Status**: **Phase 1 (100% Completed)** | **Phase 2 (100% Completed)** | **Phase 3 (100% Completed)** | **Phase 4 (100% Completed)**  
 > **Active Environment**: Ports `1961` (API) & `1962` (Web), Postgres `5433`, Redis `6379`, MinIO `9000/9001`  
 > **Last Verification Date**: 2026-09-21  
 
@@ -13,6 +13,7 @@
 | **Phase 1** | **Foundation & Architecture** | Monorepo, Shared Contracts, NestJS API Auth, Next.js Web, Docker Stack | **100% COMPLETED** | Typecheck PASS, Oxlint PASS, 8/8 Unit Tests PASS, All Containers Healthy |
 | **Phase 2** | **Profile & Evidence Engine** | Deterministic Resume Parser, Profile Health Engine, Evidence Ledger, Role Profiles, Onboarding Wizard, Profile Hub | **100% COMPLETED** | Typecheck PASS, Oxlint PASS, 19/19 Unit Tests PASS, All Endpoints HTTP 200 |
 | **Phase 3** | **Job Discovery & Market Radar** | Connectors SDK, Normalization, Deduplication, Deterministic JD Analyzer, Jobs & Companies APIs, Web Radar UI | **100% COMPLETED** | Typecheck PASS, Lint PASS, 41/41 Unit Tests PASS, 0 Errors Across Workspaces |
+| **Phase 4** | **Resume Tailoring & Version Control** | Deterministic ATS Scoring, Evidence-Backed Tailoring, Visual Diffing, Semantic HTML & Text Exporter, Web Tailoring Studio & Audit | **100% COMPLETED** | Typecheck PASS, Lint PASS, 50/50 Unit Tests PASS (14/14 suites), 0 Errors |
 
 ---
 
@@ -167,13 +168,44 @@
 
 ---
 
+## Phase 4: Task Verification Matrix
+
+### 1. Data Contracts & Prisma Schema
+- [x] **P4-01: Shared AST & Scoring Types** — `packages/types` extended with `ResumeAST`, `AtsScoreResult`, `AtsScoreBreakdown`, `ResumeVariant`, `ResumeDiff`, `TailorResumeInput`, and `ResumeTemplateStyle`.
+- [x] **P4-02: Shared Zod DTOs** — `packages/schemas` extended with `ScoreResumeSchema`, `TailorResumeSchema`, and `CreateVariantSchema`.
+- [x] **P4-03: Relational Persistence Extensions** — `ResumeVersion` extended in `prisma/schema.prisma` with `structuredData`, `targetJobId`, `targetCompany`, `atsScore`, `atsBreakdown`, `diffSummary`, `evidenceBindings`, and relation to `Job`.
+- [x] **P4-04: Package Compilations** — `@career-os/types` and `@career-os/schemas` built and packaged cleanly.
+
+### 2. ATS Scorer & Tailoring Engines
+- [x] **P4-05: Deterministic ATS Scorer** — 5-factor scoring engine (35% required skills, 15% preferred skills, 20% experience alignment, 15% quantifiable impact, 15% formatting hygiene) with synonym expansion and actionable recommendations.
+- [x] **P4-06: Zero-Hallucination Tailoring Service** — Evidence re-ranking, bullet re-ordering based on keyword relevance, skills promotion to core, and summary synthesis; every bullet point bound to verified evidence.
+- [x] **P4-07: Resume Diff Engine** — Structural section-level and bullet-level diffing between base and tailored versions.
+- [x] **P4-08: ATS Document Exporter** — Semantic HTML generator with print stylesheet and plain-text ASCII resume generator.
+
+### 3. Backend REST APIs
+- [x] **P4-09: Score Resume Endpoint** — `POST /api/v1/resumes/:id/score` calculating deterministic score against target job or custom JD.
+- [x] **P4-10: Tailor Resume Endpoint** — `POST /api/v1/resumes/:id/tailor` creating an immutable tailored variant.
+- [x] **P4-11: List Variants Endpoint** — `GET /api/v1/resumes/variants` returning tailored resumes with target job info and ATS scores.
+- [x] **P4-12: Variant Detail Endpoint** — `GET /api/v1/resumes/variants/:id` returning structured AST and audit details.
+- [x] **P4-13: Variant Diff Endpoint** — `GET /api/v1/resumes/variants/:id/diff` returning structural delta against base version.
+- [x] **P4-14: Variant Export Endpoint** — `GET /api/v1/resumes/variants/:id/export` generating HTML, plain text, or JSON.
+
+### 4. Frontend Web UI
+- [x] **P4-15: Resume Hub (`/resumes`)** — Master resumes & tailored variants tabs, ATS gauges, target company badges, and quick export.
+- [x] **P4-16: Tailoring Studio (`/resumes/tailor`)** — 4-step wizard (Role Selection, Pre-score Gap Analysis, Evidence Claims, and Side-by-side Diff Preview).
+- [x] **P4-17: Variant & ATS Audit Inspector (`/resumes/[id]`)** — Printable semantic resume preview, ATS category scorecard, matched vs missing skills, and visual diff viewer.
+- [x] **P4-18: Role Details Integration** — Direct "Tailor Resume" CTA from `/jobs/[id]` header and Candidate Match Readiness card.
+- [x] **P4-19: Mission Control Integration** — ATS Tailoring Engine launch card added to `/dashboard`.
+
+---
+
 ## Verification & Quality Assurance Summary
 
 | Check | Tool / Target | Command | Result |
 | :--- | :--- | :--- | :--- |
 | **Monorepo Typecheck** | Turborepo (4 packages) | `pnpm run typecheck` | **PASS (0 errors across 4/4 packages)** |
-| **Code Linting** | Oxlint & ESLint | `pnpm run lint` | **PASS (0 errors, 0 warnings in API; clean React purity)** |
-| **Backend Test Suite** | Vitest (11 suites, 41 tests) | `pnpm --filter api test` | **PASS (41/41 passing)** |
+| **Code Linting** | Oxlint & ESLint | `pnpm run lint` | **PASS (0 errors, 0 warnings across API and Web)** |
+| **Backend Test Suite** | Vitest (14 suites, 50 tests) | `pnpm --filter api test` | **PASS (50/50 passing in 3.06s)** |
 | **Prisma Generation** | Prisma Client (v6.1.0) | `pnpm -F api exec prisma generate` | **PASS (Schema synchronized)** |
 
 ---
@@ -187,6 +219,8 @@
   - `plans/phase-2-tasks.md`
   - `plans/phase-3-plan.md`
   - `plans/phase-3-tasks.md`
+  - `plans/phase-4-plan.md`
+  - `plans/phase-4-tasks.md`
   - `plans/master-task-tracker.md` (this file)
   - `.agents/skills/ai-career-os/SKILL.md`
 - **Backend API Modules**:
@@ -194,7 +228,11 @@
   - `apps/api/src/users/*`
   - `apps/api/src/profile/*`
   - `apps/api/src/evidence/*`
-  - `apps/api/src/resumes/*`
+  - `apps/api/src/resumes/*` (Resumes service, controller, module)
+  - `apps/api/src/resumes/ats-scorer/*` (Deterministic 5-factor ATS scoring service)
+  - `apps/api/src/resumes/tailoring/*` (Evidence-backed tailoring pipeline)
+  - `apps/api/src/resumes/diff/*` (Structural diffing service)
+  - `apps/api/src/resumes/export/*` (Semantic ATS HTML and plain-text export)
   - `apps/api/src/resume-parser/*`
   - `apps/api/src/role-profiles/*`
   - `apps/api/src/storage/*`
@@ -205,14 +243,18 @@
 - **Frontend App Routes & Components**:
   - `apps/web/src/app/(auth)/login/page.tsx`
   - `apps/web/src/app/(auth)/signup/page.tsx`
-  - `apps/web/src/app/(app)/dashboard/page.tsx` (Market radar highlights & stats)
+  - `apps/web/src/app/(app)/dashboard/page.tsx` (Market radar & ATS tailoring studio banner)
   - `apps/web/src/app/(app)/onboarding/page.tsx`
   - `apps/web/src/app/(app)/profile/page.tsx`
   - `apps/web/src/app/(app)/profile/evidence/page.tsx`
   - `apps/web/src/app/(app)/role-profiles/page.tsx`
   - `apps/web/src/app/(app)/jobs/page.tsx` (Market Radar discovery & quick-preview)
-  - `apps/web/src/app/(app)/jobs/[id]/page.tsx` (Role details, match readiness, JD inspector)
+  - `apps/web/src/app/(app)/jobs/[id]/page.tsx` (Role details, match readiness, JD inspector, Tailor CTA)
   - `apps/web/src/app/(app)/companies/page.tsx` (Companies hiring directory)
+  - `apps/web/src/app/(app)/resumes/page.tsx` (Resume Hub & Lineage)
+  - `apps/web/src/app/(app)/resumes/tailor/page.tsx` (4-step Tailoring Studio)
+  - `apps/web/src/app/(app)/resumes/[id]/page.tsx` (Variant & ATS Audit Inspector)
   - `apps/web/src/components/app-sidebar.tsx`
   - `apps/web/src/components/ui/file-dropzone.tsx`
+  - `apps/web/src/components/ui/textarea.tsx`
 

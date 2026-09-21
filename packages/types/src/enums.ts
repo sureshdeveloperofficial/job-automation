@@ -175,3 +175,9 @@ export enum InterviewType {
   ONSITE = 'ONSITE',
   FINAL = 'FINAL',
 }
+
+export enum ResumeTemplateStyle {
+  MODERN = 'MODERN',
+  CLASSIC = 'CLASSIC',
+  MINIMAL = 'MINIMAL',
+}

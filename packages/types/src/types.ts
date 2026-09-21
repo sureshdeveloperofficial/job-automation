@@ -16,6 +16,7 @@ import {
   ApplicationEventType,
   NotificationType,
   InterviewType,
+  ResumeTemplateStyle,
 } from './enums.js';
 
 // ─── User ─────────────────────────────────────────────────────────────────────
@@ -337,7 +338,139 @@ export interface SkillGap {
   evidenceIds: string[];
 }
 
-// ─── Resume ───────────────────────────────────────────────────────────────────
+// ─── Resume & AST ─────────────────────────────────────────────────────────────
+
+export interface ResumeBulletItem {
+  text: string;
+  evidenceId?: string; // ID of verified CandidateEvidence claim
+  metrics?: string[]; // Quantified impact (e.g., "$1.2M", "45%", "10x")
+  matchedSkills?: string[];
+}
+
+export interface ResumeExperienceItem {
+  company: string;
+  role: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  current?: boolean;
+  bullets: ResumeBulletItem[];
+}
+
+export interface ResumeEducationItem {
+  institution: string;
+  degree?: string;
+  field?: string;
+  startDate?: string;
+  endDate?: string;
+  gpa?: string;
+}
+
+export interface ResumeProjectItem {
+  name: string;
+  description?: string;
+  url?: string;
+  bullets?: string[];
+  skills?: string[];
+}
+
+export interface ResumeAST {
+  personalInfo: {
+    fullName: string;
+    headline?: string;
+    email: string;
+    phone?: string;
+    location?: string;
+    linkedinUrl?: string;
+    githubUrl?: string;
+    portfolioUrl?: string;
+  };
+  summary: string;
+  skills: {
+    core: string[];
+    secondary?: string[];
+    tools?: string[];
+  };
+  experiences: ResumeExperienceItem[];
+  education: ResumeEducationItem[];
+  projects?: ResumeProjectItem[];
+  certifications?: string[];
+  evidenceBindings?: string[];
+}
+
+// ─── ATS Scorer Contracts ─────────────────────────────────────────────────────
+
+export interface AtsCategoryScore {
+  score: number; // 0 - 100
+  weight: number; // e.g., 0.35
+  weightedScore: number;
+  details: string;
+}
+
+export interface AtsScoreBreakdown {
+  overallScore: number; // 0 - 100
+  requiredSkills: AtsCategoryScore & {
+    matched: string[];
+    missing: string[];
+  };
+  preferredSkills: AtsCategoryScore & {
+    matched: string[];
+    missing: string[];
+  };
+  experienceAlignment: AtsCategoryScore & {
+    candidateYears: number;
+    requiredYears: number;
+    seniorityMatch: boolean;
+  };
+  quantifiableImpact: AtsCategoryScore & {
+    quantifiedBulletCount: number;
+    totalBulletCount: number;
+    impactRatio: number;
+  };
+  formattingHygiene: AtsCategoryScore & {
+    hasContactInfo: boolean;
+    hasSummary: boolean;
+    hasStandardSections: boolean;
+  };
+  recommendations: string[];
+}
+
+export interface AtsScoreResult {
+  score: number;
+  breakdown: AtsScoreBreakdown;
+  assessedAt: Date;
+  jobId?: string;
+  jobTitle?: string;
+  companyName?: string;
+}
+
+// ─── Resume Diff & Tailoring ──────────────────────────────────────────────────
+
+export interface ResumeDiffChange {
+  section: 'summary' | 'skills' | 'experience' | 'projects' | 'education';
+  type: 'ADDED' | 'MODIFIED' | 'REORDERED' | 'UNCHANGED';
+  description: string;
+  details?: Record<string, unknown>;
+}
+
+export interface ResumeDiff {
+  addedSkills: string[];
+  reorderedBulletsCount: number;
+  evidenceClaimsLinked: number;
+  summaryChanged: boolean;
+  atsScoreDelta: number;
+  changes: ResumeDiffChange[];
+}
+
+export interface TailorResumeInput {
+  baseResumeId: string;
+  jobId?: string;
+  customJobDescription?: string;
+  targetRoleTitle?: string;
+  targetCompanyName?: string;
+  selectedEvidenceIds?: string[];
+  templateStyle?: ResumeTemplateStyle;
+}
 
 export interface Resume {
   id: string;
@@ -361,9 +494,34 @@ export interface ResumeVersion {
   fileSizeBytes: number;
   atsScore?: number;
   recruiterScore?: number;
+  structuredData?: ResumeAST;
+  targetJobId?: string;
+  targetCompany?: string;
+  atsBreakdown?: AtsScoreBreakdown;
+  diffSummary?: ResumeDiff;
+  evidenceBindings?: string[];
   isActive: boolean;
   isFrozen: boolean;
   createdAt: Date;
+}
+
+export interface ResumeVariant {
+  id: string;
+  resumeId: string;
+  version: number;
+  name: string;
+  type: ResumeType;
+  targetJobId?: string;
+  targetJobTitle?: string;
+  targetCompany?: string;
+  atsScore?: number;
+  atsBreakdown?: AtsScoreBreakdown;
+  structuredData?: ResumeAST;
+  diffSummary?: ResumeDiff;
+  evidenceBindings: string[];
+  fileKey?: string;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 // ─── Application ──────────────────────────────────────────────────────────────

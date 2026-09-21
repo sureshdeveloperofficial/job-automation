@@ -17,8 +17,9 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiConsumes, ApiBody
 import { ResumesService } from './resumes.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
-import { CreateResumeSchema } from '@career-os/schemas';
-import type { CreateResumeDto } from '@career-os/schemas';
+import { CreateResumeSchema, ScoreResumeSchema, TailorResumeSchema } from '@career-os/schemas';
+import type { CreateResumeDto, ScoreResumeDto, TailorResumeDto } from '@career-os/schemas';
+import { ResumeTemplateStyle } from '@career-os/types';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 
 class ParseResumeTextDto {
@@ -81,8 +82,46 @@ export class ResumesController {
     return this.resumesService.importAndSyncProfile(userId, body.text, body.autoSeedEvidence ?? true);
   }
 
+  @Get('variants')
+  @ApiOperation({ summary: 'List all tailored resume variants and versions for candidate' })
+  @ApiResponse({ status: 200, description: 'List of resume variants' })
+  async listVariants(@CurrentUser('id') userId: string) {
+    return this.resumesService.listVariants(userId);
+  }
+
+  @Get('variants/:id')
+  @ApiOperation({ summary: 'Get a specific resume variant by version ID' })
+  @ApiResponse({ status: 200, description: 'Resume variant details' })
+  async getVariant(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.resumesService.getVariant(userId, id);
+  }
+
+  @Get('variants/:id/diff')
+  @ApiOperation({ summary: 'Get visual diff for a resume variant against its base version' })
+  @ApiResponse({ status: 200, description: 'Resume diff breakdown' })
+  async getVariantDiff(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.resumesService.getVariantDiff(userId, id);
+  }
+
+  @Get('variants/:id/export')
+  @ApiOperation({ summary: 'Export resume variant as semantic ATS HTML, plain text, or structured JSON' })
+  @ApiResponse({ status: 200, description: 'Exported resume document' })
+  async exportVariant(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Query('format') format?: 'html' | 'text' | 'json',
+    @Query('template') template?: ResumeTemplateStyle,
+  ) {
+    return this.resumesService.exportVariant(
+      userId,
+      id,
+      format || 'html',
+      template || ResumeTemplateStyle.MODERN,
+    );
+  }
+
   @Get()
-  @ApiOperation({ summary: 'List user resumes with active versions' })
+  @ApiOperation({ summary: 'List user master resumes with active versions' })
   @ApiResponse({ status: 200, description: 'List of resumes' })
   async listResumes(@CurrentUser('id') userId: string) {
     return this.resumesService.listResumes(userId);
@@ -96,6 +135,30 @@ export class ResumesController {
     @Body(new ZodValidationPipe(CreateResumeSchema)) dto: CreateResumeDto,
   ) {
     return this.resumesService.createResume(userId, dto);
+  }
+
+  @Post(':id/score')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Calculate deterministic ATS score against target job or custom description' })
+  @ApiResponse({ status: 200, description: 'ATS score evaluation result' })
+  async scoreResume(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(ScoreResumeSchema)) dto: ScoreResumeDto,
+  ) {
+    return this.resumesService.scoreResume(userId, id, dto);
+  }
+
+  @Post(':id/tailor')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Generate evidence-backed tailored resume variant for target job' })
+  @ApiResponse({ status: 200, description: 'Tailored resume variant created' })
+  async tailorResume(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(TailorResumeSchema)) dto: TailorResumeDto,
+  ) {
+    return this.resumesService.tailorResume(userId, id, dto);
   }
 
   @Get(':id')

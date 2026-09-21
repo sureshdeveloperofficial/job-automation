@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Loader2,
   ArrowUpRight,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -138,13 +139,41 @@ export default function DashboardPage() {
                 <div className="glass rounded-2xl p-5 hover:border-blue-500/40 transition-all duration-200 group cursor-pointer border border-border/80">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
-                    <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
-                  <p className="text-2xl font-black text-foreground mt-2">{stat.value}</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
                   <p className="text-[11px] text-muted-foreground mt-1">{stat.desc}</p>
                 </div>
               </Link>
             ))}
+          </div>
+
+          {/* ATS Tailoring & Version Control Engine Banner */}
+          <div className="glass rounded-2xl p-5 border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 via-purple-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 flex-shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">ATS Tailoring & Version Control Engine</h3>
+                <p className="text-xs text-muted-foreground">
+                  Score your resume deterministically against target jobs, re-rank verified evidence, and export ATS-ready documents.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link href="/resumes">
+                <Button size="sm" variant="outline" className="text-xs font-semibold h-8 border-border">
+                  Resume Hub
+                </Button>
+              </Link>
+              <Link href="/resumes/tailor">
+                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold h-8 shadow-[0_0_15px_rgba(99,102,241,0.3)] gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Launch Studio
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* 2-Column Split: Market Radar Highlights + Hiring Companies */}

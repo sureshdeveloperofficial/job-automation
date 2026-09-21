@@ -357,24 +357,32 @@ model Resume {
 }
 
 model ResumeVersion {
-  id            String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  resumeId      String  @db.Uuid
-  version       Int
-  fileKey       String  @db.VarChar(1000)
-  mimeType      String  @db.VarChar(100)
-  fileSizeBytes Int
-  atsScore      Int?
-  recruiterScore Int?
-  isActive      Boolean @default(true)
-  isFrozen      Boolean @default(false)
+  id               String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  resumeId         String   @db.Uuid
+  version          Int
+  fileKey          String   @db.VarChar(1000)
+  mimeType         String   @db.VarChar(100)
+  fileSizeBytes    Int
+  atsScore         Int?
+  recruiterScore   Int?
+  structuredData   Json?
+  targetJobId      String?  @db.Uuid
+  targetCompany    String?  @db.VarChar(200)
+  atsBreakdown     Json?
+  diffSummary      Json?
+  evidenceBindings String[] @default([])
+  isActive         Boolean  @default(true)
+  isFrozen         Boolean  @default(false)
 
   createdAt DateTime @default(now())
 
   resume       Resume        @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  targetJob    Job?          @relation(fields: [targetJobId], references: [id], onDelete: SetNull)
   applications Application[]
 
   @@unique([resumeId, version])
   @@index([resumeId])
+  @@index([targetJobId])
   @@map("resume_versions")
 }
 
@@ -451,9 +459,10 @@ model Job {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company      Company       @relation(fields: [companyId], references: [id])
-  jdSnapshots  JDSnapshot[]
-  applications Application[]
+  company        Company         @relation(fields: [companyId], references: [id])
+  jdSnapshots    JDSnapshot[]
+  applications   Application[]
+  resumeVersions ResumeVersion[]
 
   @@unique([source, sourceJobId])
   @@index([companyId])
