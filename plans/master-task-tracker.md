@@ -194,8 +194,22 @@
 - [x] **P4-15: Resume Hub (`/resumes`)** — Master resumes & tailored variants tabs, ATS gauges, target company badges, and quick export.
 - [x] **P4-16: Tailoring Studio (`/resumes/tailor`)** — 4-step wizard (Role Selection, Pre-score Gap Analysis, Evidence Claims, and Side-by-side Diff Preview).
 - [x] **P4-17: Variant & ATS Audit Inspector (`/resumes/[id]`)** — Printable semantic resume preview, ATS category scorecard, matched vs missing skills, and visual diff viewer.
-- [x] **P4-18: Role Details Integration** — Direct "Tailor Resume" CTA from `/jobs/[id]` header and Candidate Match Readiness card.
+- [x] **P4-18: Role Details Integration** — Direct "Tailor Resume" CTA button from `/jobs/[id]` header and Candidate Match Readiness card.
 - [x] **P4-19: Mission Control Integration** — ATS Tailoring Engine launch card added to `/dashboard`.
+
+### 5. Docker Container Reliability & Auth Resolution
+- [x] **P4-20: Automatic Docker Container Schema Push** — `apps/api/package.json` `"start:prod"` configured with `prisma db push --skip-generate && node dist/main.js`, ensuring PostgreSQL tables (`public.users`, etc.) are automatically synchronized on container spin-up.
+- [x] **P4-21: CurrentUser Decorator Property Resolution** — [`CurrentUser`](file:///d:/Personal/job-automation/apps/api/src/auth/decorators/current-user.decorator.ts) updated to correctly extract string IDs (`@CurrentUser('id')`), resolving user ID lookups in resume and application services.
+
+---
+
+## Phase 5: Application Engine & Submission Automation (Roadmap — Next Up)
+
+- **Lifecycle State Machine**: Comprehensive states (`DRAFT`, `READY`, `SUBMITTING`, `SUBMITTED`, `INTERVIEWING`, `OFFER`, `REJECTED`, `ARCHIVED`).
+- **Form Automation Engine**: Mapping candidate profile and evidence claims to standard ATS application form fields (Workday, Greenhouse, Lever).
+- **User Consent & Review Gate**: Mandatory review and confirmation gate before any automated submission is processed.
+- **Submission Receipts & Proofs**: Capture submission confirmation IDs, timestamps, and evidence logs.
+- **Application Tracker UI**: Kanban and tabular views for application status, follow-up reminders, and response metrics.
 
 ---
 
